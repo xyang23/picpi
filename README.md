@@ -1,6 +1,6 @@
-# PICPI paper reproduction
+# PICPI 
 
-This folder reproduces the figures and tables in the PICPI paper.
+This folder implements the experiments in the PICPI paper.
 
 1. **Reproduce the paper figures/tables** into `figures/` from stored results
 2. **(Optional) Compute and store results** into `cached_results/`

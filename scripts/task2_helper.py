@@ -1,3 +1,8 @@
+"""Full Task 2 multiclass DGP-sweep implementation and helper functions.
+
+The user-facing ``scripts/task2.py`` wrapper supplies the paper configuration.
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -72,7 +77,7 @@ SEED_STEP = 100
 SPLIT_CONFORMAL_MAX_INTERVALS_PER_CLASS = 200
 DEFAULT_COVERAGE_SWEEP_TARGETS = tuple(np.linspace(0.00, 1.00, 16))
 SMOKE_COVERAGE_SWEEP_TARGETS = (0.25, 0.50, 0.75, 0.95)
-DEFAULT_RESULTS_DIR = THIS_FILE.parent / "results"
+DEFAULT_RESULTS_DIR = REPO_ROOT / "cached_results" / "task2"
 MILP_SOLVE_LOCK = threading.Lock()
 # Workers persist for the whole pool. Do NOT recycle with max_tasks_per_child:
 # on POSIX that leaks the result-pipe FDs to replacement workers, so when a

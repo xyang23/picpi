@@ -1,4 +1,4 @@
-"""Compute stored inputs for the paper teaser figure.
+"""Reusable computation helpers for the paper teaser figure.
 
 Original source: ``experiments/uncertainty_quantification/teaser.ipynb``.
 Quadratic ground truth, linear logistic fit, empirical PICPI bins.

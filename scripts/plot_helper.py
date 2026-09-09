@@ -1,4 +1,4 @@
-"""Draw the paper figures and table from stored results."""
+"""Reusable plotting and table-writing helpers for the paper outputs."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from matplotlib.lines import Line2D
 from matplotlib.patches import Rectangle
 
 from picpi.paths import figures_dir
-from picpi.task1 import TASK1_METHOD_ORDER
+from scripts.task1_helper import TASK1_METHOD_ORDER
 
 DGP_DISPLAY_ORDER = ("true_linear_gaussian_d10", "population_nonlinear")
 CURVE_METHOD_ORDER = [

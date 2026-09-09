@@ -1,6 +1,7 @@
-"""Task 1 compute: univariate visualization, misspecified tree, multivariate table.
+"""Reusable Task 1 computation helpers.
 
 Original source: ``experiments/final_sub/task1_final_submission.ipynb``.
+Includes the univariate visualization, misspecified tree, and multivariate table.
 """
 
 from __future__ import annotations

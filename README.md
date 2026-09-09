@@ -1,13 +1,10 @@
 # PICPI paper reproduction
 
-This folder reproduces the figures and tables in the PICPI paper from stored numerical results. A GPU is not required.
+This folder reproduces the figures and tables in the PICPI paper.
 
-There are two stages:
+1. **Reproduce the paper figures/tables** into `figures/` from stored results
+2. **(Optional) Compute and store results** into `cached_results/`
 
-1. **Compute and store results** into `cached_results/`
-2. **Load those results and draw the paper figures/tables** into `figures/`
-
-The expensive Monte Carlo and GPU intermediates are already included. The default reproduction path only loads those files.
 
 ## Environment setup (`uv`)
 
@@ -24,13 +21,7 @@ cd picpi_reproducibility
 uv sync
 ```
 
-This creates `.venv` from `pyproject.toml` (Python >= 3.10, plus numpy, pandas, matplotlib, scipy, scikit-learn, tqdm, and Jupyter). All commands below use `uv run`.
-
-Optional Jupyter kernel:
-
-```bash
-uv run python -m ipykernel install --user --name picpi-reproducibility
-```
+This creates `.venv` from `pyproject.toml` (Python >= 3.10, plus numpy, pandas, matplotlib, scipy, scikit-learn, and tqdm). All commands below use `uv run`.
 
 ## Reproduce the paper figures and table
 
@@ -39,13 +30,7 @@ Default path: load the stored intermediates, rebuild the summaries, check they m
 ```bash
 cd picpi_reproducibility
 uv sync
-uv run python compute/plot_all.py
-```
-
-The same steps can be run interactively:
-
-```bash
-uv run jupyter notebook notebooks/02_reproduce_figures.ipynb
+uv run python scripts/plot_all.py
 ```
 
 Outputs:
@@ -62,58 +47,131 @@ figures/task1_multivariate_mc_summary.tex
 figures/task2_multiclass_dgp_sweep.pdf
 ```
 
-## Optional: recompute cheap CPU results
+## Optional: recompute results
 
-These two jobs run on CPU. They overwrite `cached_results/teaser/` and `cached_results/task1/`.
+All precomputed results required to reproduce the figures and table are provided under `cached_results/`. The following experiments can be rerun to regenerate those results.
 
-```bash
-uv run python compute/teaser.py
-uv run python compute/task1.py
-```
+### Intro figure (CPU)
 
-`compute/task1.py` takes about two minutes for the 100-replication table. A smoke test:
+Generates the calibration intervals and predicted-versus-true probability data used in the introductory figure.
 
 ```bash
-uv run python compute/task1.py --n-mc 2
+uv run python scripts/teaser.py
 ```
 
-The same cheap jobs are also in `notebooks/01_compute_results.ipynb`:
+Results are written to `cached_results/teaser/` by default.
+
+### Task 1: probability intervals (CPU)
+
+Computes the univariate method comparison, the misspecified decision-tree example, and the 100-replication multivariate Monte Carlo table.
 
 ```bash
-uv run jupyter notebook notebooks/01_compute_results.ipynb
+uv run python scripts/task1.py
 ```
+
+For a reduced Monte Carlo run that leaves the stored results unchanged:
+
+```bash
+uv run python scripts/task1.py --n-mc 2 --output-dir /tmp/picpi-task1-smoke
+```
+
+### Task 2: multiclass label sets (CPU)
+
+Compares label-set methods across target coverage levels under linear-Gaussian and nonlinear-mixture data-generating processes. Pass `--overwrite` to replace the stored Task 2 results.
+
+```bash
+uv run python scripts/task2.py --overwrite
+```
+
+For a short verification run that leaves the stored results unchanged:
+
+```bash
+uv run python scripts/task2.py --smoke --output-dir /tmp/picpi-task2-smoke
+```
+
+### Width shrinkage (GPU)
+
+Evaluates how PICPI interval width changes as the calibration sample size increases. This experiment requires a CUDA GPU.
+
+```bash
+uv sync --extra gpu
+uv run python scripts/thm_width.py
+```
+
+For a reduced run that leaves the stored results unchanged:
+
+```bash
+uv run python scripts/thm_width.py --smoke --output-dir /tmp/picpi-thm-width-smoke
+```
+
+### Empirical-mode diagnostics (GPU)
+
+Compares empirical- and population-mode PICPI behavior across calibration sample sizes, including held-out property checks and interval widths. This experiment requires a CUDA GPU.
+
+```bash
+uv sync --extra gpu
+uv run python scripts/empirical_mode_diagnostics.py
+```
+
+For a reduced run that leaves the stored results unchanged:
+
+```bash
+uv run python scripts/empirical_mode_diagnostics.py --smoke --output-dir /tmp/picpi-empirical-mode-diagnostics-smoke
+```
+
+For either GPU experiment, use `--gpu-ids` to select one or more CUDA devices. The default is GPU 0; for example, `--gpu-ids 0,1` uses GPUs 0 and 1.
 
 After recomputing, redraw the figures:
 
 ```bash
-uv run python compute/plot_all.py
+uv run python scripts/plot_all.py
 ```
-
-Do **not** rerun the GPU scripts to reproduce the paper. Width-shrinkage and empirical-mode diagnostics already have their per-replication CSVs in `cached_results/thm/` and `cached_results/empirical_mode/`. Task 2 was a CPU sweep; its per-seed `long.csv` files are already in `cached_results/task2/`.
 
 ## Figure and table mapping
 
-| Paper object | Paper file | This folder, compute | This folder, plot | Stored result |
+| Paper object | Paper file | Computation entry point | Plotting function | Stored result |
 |---|---|---|---|---|
-| Teaser (`fig:teaser`) | `Figures/picpi_teaser_green.pdf` | `compute/teaser.py` | `picpi/plot.py::plot_teaser` | `cached_results/teaser/` |
-| Width shrinkage (`fig:thm_box_rate`) | `Figures/thm_width_mean_boxplot.pdf`, `Figures/thm_width_vs_rate.pdf` | cached GPU CSV, no rerun | `picpi/plot.py::plot_thm` | `cached_results/thm/thm_df_results.csv` |
-| Empirical-mode diagnostics (`fig:emp_mode_diagnostics`) | `Figures/heldout_picpi_failure_rate_by_method.pdf`, `Figures/heldout_picpi_pass_rate_by_interval_length.pdf` | cached GPU CSV, no rerun | `picpi/plot.py::plot_empirical_mode` | `cached_results/empirical_mode/heldout_picpi_*.csv` |
-| Task 1 univariate (`fig:task1_interval_visualization`) | `artifacts/task1_interval_visualization.pdf` | `compute/task1.py` | `picpi/plot.py::plot_task1_visualization` | `cached_results/task1/univariate_visualization.npz` |
-| Task 1 misspecified tree (`fig:task1_misspecified_tree`) | `artifacts/task1_misspecified_point_estimator_decision_tree.pdf` | `compute/task1.py` | `picpi/plot.py::plot_task1_tree` | `cached_results/task1/misspecified_tree.npz` |
-| Task 1 table (`tab:task1_multivariate_mc_summary`) | `artifacts/task1_multivariate_mc_summary.tex` | `compute/task1.py` | `picpi/plot.py::write_task1_table` | `cached_results/task1/multivariate_mc_reps.csv` |
-| Task 2 (`fig:task2`) | `Figures/task2_multiclass_dgp_sweep.pdf` | cached CPU `long.csv`, no rerun | `picpi/plot.py::plot_task2` | `cached_results/task2/*/long.csv` |
+| Teaser (`fig:teaser`) | `Figures/picpi_teaser_green.pdf` | `scripts/teaser.py` | `scripts/plot_helper.py::plot_teaser` | `cached_results/teaser/` |
+| Width shrinkage (`fig:thm_box_rate`) | `Figures/thm_width_mean_boxplot.pdf`, `Figures/thm_width_vs_rate.pdf` | `scripts/thm_width.py` (CUDA, optional) | `scripts/plot_helper.py::plot_thm` | `cached_results/thm/thm_df_results.csv` |
+| Empirical-mode diagnostics (`fig:emp_mode_diagnostics`) | `Figures/heldout_picpi_failure_rate_by_method.pdf`, `Figures/heldout_picpi_pass_rate_by_interval_length.pdf` | `scripts/empirical_mode_diagnostics.py` (CUDA, optional) | `scripts/plot_helper.py::plot_empirical_mode` | `cached_results/empirical_mode/heldout_picpi_*.csv` |
+| Task 1 univariate (`fig:task1_interval_visualization`) | `artifacts/task1_interval_visualization.pdf` | `scripts/task1.py` | `scripts/plot_helper.py::plot_task1_visualization` | `cached_results/task1/univariate_visualization.npz` |
+| Task 1 misspecified tree (`fig:task1_misspecified_tree`) | `artifacts/task1_misspecified_point_estimator_decision_tree.pdf` | `scripts/task1.py` | `scripts/plot_helper.py::plot_task1_tree` | `cached_results/task1/misspecified_tree.npz` |
+| Task 1 table (`tab:task1_multivariate_mc_summary`) | `artifacts/task1_multivariate_mc_summary.tex` | `scripts/task1.py` | `scripts/plot_helper.py::write_task1_table` | `cached_results/task1/multivariate_mc_reps.csv` |
+| Task 2 (`fig:task2`) | `Figures/task2_multiclass_dgp_sweep.pdf` | `scripts/task2.py` (CPU, optional) | `scripts/plot_helper.py::plot_task2` | `cached_results/task2/*/long.csv` |
 
 PICPI interval construction is `picpi/calibration.py`.
 
 ## Folder layout
 
+Experiment files in `scripts/` follow a wrapper/helper convention: the shorter file, such as `task1.py`, is the user-facing command, while the corresponding `_helper.py` file contains the full implementation.
+
 ```text
-picpi/                 PICPI algorithm, Task 1/teaser compute, aggregators, plotters
-compute/               CLIs
-vendor/                original Task 2 and GPU runners (record only)
-notebooks/
-  01_compute_results.ipynb
-  02_reproduce_figures.ipynb
-cached_results/        stored numerical outputs
-figures/               regenerated paper PDFs and the Task 1 table
+picpi/                            Reusable PICPI core
+  calibration.py                 PICPI interval-construction algorithm
+  paths.py                       Shared repository and output paths
+
+scripts/                          Paper-specific computation and plotting workflows
+  teaser.py                       Teaser command
+  teaser_helper.py                Teaser data generation and storage
+  task1.py                        Task 1 command
+  task1_helper.py                 Task 1 simulations and result storage
+  task2.py                        Task 2 command 
+  task2_helper.py                 Task 2 multiclass DGP-sweep implementation
+  thm_width.py                    Width-shrinkage GPU command
+  thm_width_helper.py             Full width-shrinkage GPU implementation
+  empirical_mode_diagnostics.py  Empirical-mode diagnostics GPU command
+  empirical_mode_diagnostics_helper.py
+                                  Full empirical-mode GPU implementation
+  aggregate_helper.py             Summary rebuilding and cached-result verification
+  plot_all.py                     Regenerate paper output
+  plot_helper.py                  Figure and table generation functions
+
+cached_results/                   Precomputed experiment outputs and summaries
+  teaser/                         Teaser inputs
+  task1/                          Task 1 simulation results
+  task2/                          Task 2 per-seed results and summaries
+  thm/                            Width-shrinkage results
+  empirical_mode/                 Empirical-mode diagnostics results
+
+figures/                          Generated PDF/PNG figures and Task 1 table files
 ```

@@ -10,14 +10,14 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from picpi.aggregate import (
+from scripts.aggregate_helper import (
     load_and_verify_empirical,
     load_and_verify_task1,
     load_and_verify_task2,
     load_and_verify_thm,
 )
 from picpi.paths import figures_dir
-from picpi.plot import (
+from scripts.plot_helper import (
     plot_empirical_mode,
     plot_task1_tree,
     plot_task1_visualization,
@@ -26,7 +26,7 @@ from picpi.plot import (
     plot_thm,
     write_task1_table,
 )
-from picpi.teaser import load_teaser
+from scripts.teaser_helper import load_teaser
 
 
 def main() -> None:

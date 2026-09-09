@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from picpi.paths import VENDOR, cached
+from picpi.paths import cached
 
 
 def main() -> None:
@@ -35,7 +35,7 @@ def main() -> None:
 
     cmd = [
         sys.executable,
-        str(VENDOR / "run_multiclass_dgp_sweep.py"),
+        str(Path(__file__).with_name("task2_helper.py")),
         "--mc-reps",
         str(2 if args.smoke else args.mc_reps),
         "--seed",

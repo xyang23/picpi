@@ -12,7 +12,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from picpi.paths import cached
-from picpi.teaser import compute_teaser, save_teaser
+from scripts.teaser_helper import compute_teaser, save_teaser
 
 
 def main() -> None:

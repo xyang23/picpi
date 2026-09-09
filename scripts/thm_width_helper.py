@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""GPU reproduction of experiments/veri_Thm5.2/thm_demo.ipynb.
+"""Full GPU implementation for the Theorem 5.2 width experiment.
 
-The notebook samples calibration rows directly and then scans them once for
-every candidate interval. This script keeps the same Task 1 discrete X grid and
-population-calibration criterion, but uses aggregate sufficient statistics:
+The original notebook samples calibration rows directly and then scans them once
+for every candidate interval. This script keeps the same Task 1 discrete X grid
+and population-calibration criterion, but uses aggregate sufficient statistics:
 counts per X_GRID point and successes per X_GRID point.
+
+The user-facing ``scripts/thm_width.py`` wrapper supplies the paper configuration.
 """
 
 from __future__ import annotations
@@ -27,6 +29,8 @@ import pandas as pd
 import torch
 import torch.nn.functional as F
 from tqdm import tqdm
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 DEFAULT_N_GRID = (
@@ -446,7 +450,9 @@ def main() -> None:
         type=parse_gpu_ids,
         default=parse_gpu_ids("0"),
     )
-    parser.add_argument("--output-dir", type=Path, default=Path("script/outputs"))
+    parser.add_argument(
+        "--output-dir", type=Path, default=ROOT / "cached_results" / "thm"
+    )
     parser.add_argument("--n-grid", nargs="+", type=int, default=list(DEFAULT_N_GRID))
     parser.add_argument("--reps", type=int, default=100)
     parser.add_argument("--seed", type=int, default=0)

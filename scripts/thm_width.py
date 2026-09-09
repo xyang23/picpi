@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from picpi.paths import VENDOR, cached
+from picpi.paths import cached
 
 
 def main() -> None:
@@ -37,7 +37,7 @@ def main() -> None:
     reps = 2 if args.smoke else args.reps
     cmd = [
         sys.executable,
-        str(VENDOR / "reproduce_thm_gpu.py"),
+        str(Path(__file__).with_name("thm_width_helper.py")),
         "--gpu-ids",
         args.gpu_ids,
         "--output-dir",

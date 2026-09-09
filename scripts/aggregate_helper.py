@@ -1,4 +1,4 @@
-"""Rebuild paper summaries from stored per-replication CSVs.
+"""Reusable aggregation and verification helpers for stored experiment results.
 
 These aggregations are the same as the original GPU / sweep runners.
 They let the plotting path prove that the cached intermediates determine
@@ -14,8 +14,8 @@ import numpy as np
 import pandas as pd
 
 from picpi.paths import CACHED_RESULTS
-from picpi.plot import DGP_DISPLAY_ORDER
-from picpi.task1 import TASK1_METHOD_ORDER, aggregate_multivariate_table
+from scripts.plot_helper import DGP_DISPLAY_ORDER
+from scripts.task1_helper import TASK1_METHOD_ORDER, aggregate_multivariate_table
 
 
 def aggregate_thm(df_results: pd.DataFrame) -> pd.DataFrame:
@@ -162,7 +162,7 @@ def load_and_verify_empirical(
 
 
 def load_and_verify_task1(results_dir: Path | None = None) -> pd.DataFrame:
-    from picpi.task1 import load_task1
+    from scripts.task1_helper import load_task1
 
     payload = load_task1(results_dir)
     rebuilt = aggregate_multivariate_table(payload["mc_results"])

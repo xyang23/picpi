@@ -3,7 +3,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CACHED_RESULTS = ROOT / "cached_results"
 FIGURES = ROOT / "figures"
-VENDOR = ROOT / "vendor"
 
 
 def cached(name: str) -> Path:

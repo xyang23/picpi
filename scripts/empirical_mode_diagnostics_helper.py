@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
-"""GPU reproduction of empirical_mode_diagnosis_figures.ipynb.
+"""Full GPU implementation and helper functions for empirical-mode diagnostics.
 
-The notebook repeatedly materializes 20-dimensional Gaussian samples and then
-rescans them for every candidate interval.  This script preserves the same DGP
-and interval definitions while using two exact reductions:
+The original notebook repeatedly materializes 20-dimensional Gaussian samples
+and then rescans them for every candidate interval. This script preserves the
+same DGP and interval definitions while using two exact reductions:
 
 1. Downstream quantities depend on X only through the fitted and true linear
    predictors, so those two jointly Gaussian projections are sampled directly.
 2. All interval endpoints lie on one grid per task, so samples are streamed
    into per-bin sufficient statistics and discarded.
+
+The user-facing ``scripts/empirical_mode_diagnostics.py`` wrapper supplies the
+paper configuration.
 """
 
 from __future__ import annotations
@@ -32,6 +35,8 @@ import torch
 from scipy.special import expit
 from sklearn.linear_model import LogisticRegression
 from tqdm import tqdm
+
+ROOT = Path(__file__).resolve().parents[1]
 
 DEFAULT_N_CALIB_GRID = (
     1_000,
@@ -119,7 +124,7 @@ def parse_gpu_ids(raw: str) -> list[int]:
 
 
 def adaptive_num_bin(n_calib: int, c_value: float) -> int:
-    """Return K(n, C) using the schedule from reproduce_thm_gpu_adaptive.py."""
+    """Return K(n, C) using the width-shrinkage experiment's schedule."""
     return max(1, int(round(c_value * (n_calib ** (1.0 / 3.0)))))
 
 
@@ -899,7 +904,7 @@ def save_figures(
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
-            "Reproduce empirical-mode PICPI diagnosis figures with chunked GPU "
+            "Reproduce empirical-mode PICPI diagnostics with chunked GPU "
             "sufficient statistics."
         ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -911,7 +916,11 @@ def main() -> None:
         type=parse_gpu_ids,
         default=parse_gpu_ids("0"),
     )
-    parser.add_argument("--output-dir", type=Path, default=Path("script/outputs"))
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=ROOT / "cached_results" / "empirical_mode",
+    )
     parser.add_argument(
         "--n-calib-grid",
         nargs="+",

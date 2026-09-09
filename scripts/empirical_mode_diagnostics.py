@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rerun the empirical-mode diagnosis GPU experiment.
+"""Rerun the empirical-mode diagnostics GPU experiment.
 
 Requires CUDA. Cached paper CSVs already live in cached_results/empirical_mode/.
 """
@@ -15,12 +15,12 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from picpi.paths import VENDOR, cached
+from picpi.paths import cached
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Compute empirical-mode diagnosis results."
+        description="Compute empirical-mode diagnostics results."
     )
     parser.add_argument("--output-dir", type=Path, default=cached("empirical_mode"))
     parser.add_argument("--gpu-ids", default="0")
@@ -40,7 +40,7 @@ def main() -> None:
     n_eval = 10_000 if args.smoke else args.n_eval
     cmd = [
         sys.executable,
-        str(VENDOR / "reproduce_empirical_mode_diagnosis_gpu.py"),
+        str(Path(__file__).with_name("empirical_mode_diagnostics_helper.py")),
         "--gpu-ids",
         args.gpu_ids,
         "--output-dir",

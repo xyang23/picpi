@@ -17,7 +17,7 @@ from sklearn.tree import DecisionTreeClassifier
 from tqdm.auto import tqdm
 
 from picpi.calibration import calibration
-from picpi.paths import cached
+from scripts.paths import cached
 
 TASK1_METHOD_ORDER = [
     "Simultaneous confidence interval",

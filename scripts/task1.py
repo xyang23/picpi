@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from picpi.paths import cached
+from scripts.paths import cached
 from scripts.task1_helper import (
     N_MC_TABLE,
     compute_misspecified_tree,

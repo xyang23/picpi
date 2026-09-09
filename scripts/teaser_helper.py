@@ -13,7 +13,7 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegression
 
 from picpi.calibration import calibration
-from picpi.paths import cached
+from scripts.paths import cached
 
 SEED = 7
 DGP_BETA_LIN = 1.6

@@ -16,7 +16,7 @@ from scripts.aggregate_helper import (
     load_and_verify_task2,
     load_and_verify_thm,
 )
-from picpi.paths import figures_dir
+from scripts.paths import figures_dir
 from scripts.plot_helper import (
     plot_empirical_mode,
     plot_task1_tree,

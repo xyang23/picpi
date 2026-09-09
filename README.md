@@ -161,9 +161,9 @@ Experiment files in `scripts/` follow a wrapper/helper convention: the shorter f
 picpi/                            Reusable PICPI core
   calibration.py                 PICPI interval-construction algorithm
   inference.py                   Assign test predictions to calibrated intervals
-  paths.py                       Shared repository and output paths
 
 scripts/                          Paper-specific computation and plotting workflows
+  paths.py                        Shared repository and output paths
   example_use.py                  Commented empirical/population PICPI usage example
   example_use_helper.py           Teaser DGP and example plotting functions
   teaser.py                       Teaser command

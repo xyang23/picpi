@@ -13,7 +13,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from picpi.paths import CACHED_RESULTS
+from scripts.paths import CACHED_RESULTS
 from scripts.plot_helper import DGP_DISPLAY_ORDER
 from scripts.task1_helper import TASK1_METHOD_ORDER, aggregate_multivariate_table
 

@@ -382,6 +382,7 @@ def plot_task1_visualization(
     summary_lookup = univariate["summary"].set_index("Method")
     colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"]
     range_interval_methods = {"Calibration-based interval", "Fixed-width binning"}
+    shared_legend_handles = None
 
     fig, axes = plt.subplots(2, 3, figsize=(18, 10), sharex=True, sharey=True)
     axes = axes.flatten()
@@ -392,7 +393,6 @@ def plot_task1_visualization(
         if method in range_interval_methods:
             rounded_intervals = np.round(intervals, 12)
             start = 0
-            first_patch = True
             for idx in range(1, len(x_sorted) + 1):
                 run_ended = idx == len(x_sorted) or not np.array_equal(
                     rounded_intervals[idx], rounded_intervals[start]
@@ -410,7 +410,6 @@ def plot_task1_visualization(
                         color=colors[plot_idx],
                         alpha=0.35,
                         linewidth=1.0,
-                        label="interval" if first_patch else None,
                     )
                 else:
                     ax.fill_between(
@@ -419,9 +418,7 @@ def plot_task1_visualization(
                         [y_high, y_high],
                         alpha=0.30,
                         color=colors[plot_idx],
-                        label="interval" if first_patch else None,
                     )
-                first_patch = False
                 start = idx
         else:
             ax.fill_between(
@@ -430,39 +427,49 @@ def plot_task1_visualization(
                 intervals[:, 1],
                 alpha=0.30,
                 color=colors[plot_idx],
-                label="interval",
             )
-        ax.plot(
+        true_line = ax.plot(
             x_sorted,
             p_star_sorted,
             color="black",
             linewidth=1.6,
             label=r"true probability $p^*(x)$",
-        )
-        ax.plot(
+        )[0]
+        predicted_line = ax.plot(
             x_sorted,
             p_hat_sorted,
             color="tab:red",
             linestyle="--",
             linewidth=1.2,
             label=r"predicted probability $\hat p(x)$",
-        )
-        ax.set_title(method, fontsize=20)
-        ax.set_xlabel("x", fontsize=16)
-        ax.tick_params(axis="both", labelsize=14)
+        )[0]
+        if shared_legend_handles is None:
+            shared_legend_handles = [true_line, predicted_line]
+        ax.set_title(method, fontsize=28)
+        ax.set_xlabel("x", fontsize=24)
+        ax.tick_params(axis="both", labelsize=20)
         ax.text(
             0.97,
             0.04,
-            rf"avg length = {metrics['Average length']:.3f}, coverage of true prob = {metrics['Coverage p*']:.1%}",
+            rf"avg length = {metrics['Average length']:.3f}"
+            "\n"
+            rf"coverage of true prob = {metrics['Coverage p*']:.1%}",
             transform=ax.transAxes,
-            fontsize=14,
+            fontsize=18,
             ha="right",
             bbox=dict(boxstyle="round", facecolor="white", alpha=0.85),
         )
         ax.grid(alpha=0.25)
-        ax.legend(loc="upper left", fontsize=14)
     axes[-1].axis("off")
-    fig.tight_layout()
+    fig.legend(
+        handles=shared_legend_handles,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.01),
+        ncol=2,
+        fontsize=24,
+        frameon=False,
+    )
+    fig.tight_layout(rect=(0, 0.08, 1, 1))
     return _save(fig, output_dir / "task1_interval_visualization.pdf")
 
 

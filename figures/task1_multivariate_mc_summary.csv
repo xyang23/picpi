@@ -1,0 +1,6 @@
+Method,Avg Length,Relative ECE,"Coverage [0,1]",Coverage p*
+Simultaneous confidence interval,0.41 $\pm$ 0.01,6.39,--,100.00\% $\pm$ 0.00\%
+PICPI,0.11 $\pm$ 0.01,1.00,100.00\% $\pm$ 0.00\%,79.47\% $\pm$ 4.68\%
+Split conformal prediction,0.87 $\pm$ 0.01,27.02,--,100.00\% $\pm$ 0.00\%
+Calibration-based interval,0.02 $\pm$ 0.00,1.16,60.78\% $\pm$ 11.49\%,28.07\% $\pm$ 3.25\%
+Fixed-width binning,0.02 $\pm$ 0.00,1.05,100.00\% $\pm$ 0.00\%,29.28\% $\pm$ 3.34\%

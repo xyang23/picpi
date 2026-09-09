@@ -23,6 +23,18 @@ uv sync
 
 This creates `.venv` from `pyproject.toml` (Python >= 3.10, plus numpy, pandas, matplotlib, scipy, scikit-learn, and tqdm). All commands below use `uv run`.
 
+## PICPI usage example
+
+The commented example in `scripts/example_use.py` demonstrates how to construct population- and empirical-mode PICPIs from a fitted model and a held-out calibration sample. It also shows how to obtain the applicable interval or intervals for new test inputs.
+
+Run it with:
+
+```bash
+uv run python scripts/example_use.py
+```
+
+The example DGP and plotting details are isolated in `scripts/example_use_helper.py`. The script prints all constructed PICPIs, demonstrates test-input inference using the shortest matching population-mode interval, and saves empirical- and population-mode figures under `figures/example_use/`.
+
 ## Reproduce the paper figures and table
 
 Default path: load the stored intermediates, rebuild the summaries, check they match the cached summaries, and write the paper filenames into `figures/`.
@@ -148,14 +160,17 @@ Experiment files in `scripts/` follow a wrapper/helper convention: the shorter f
 ```text
 picpi/                            Reusable PICPI core
   calibration.py                 PICPI interval-construction algorithm
+  inference.py                   Assign test predictions to calibrated intervals
   paths.py                       Shared repository and output paths
 
 scripts/                          Paper-specific computation and plotting workflows
+  example_use.py                  Commented empirical/population PICPI usage example
+  example_use_helper.py           Teaser DGP and example plotting functions
   teaser.py                       Teaser command
   teaser_helper.py                Teaser data generation and storage
   task1.py                        Task 1 command
   task1_helper.py                 Task 1 simulations and result storage
-  task2.py                        Task 2 command 
+  task2.py                        Task 2 command
   task2_helper.py                 Task 2 multiclass DGP-sweep implementation
   thm_width.py                    Width-shrinkage GPU command
   thm_width_helper.py             Full width-shrinkage GPU implementation

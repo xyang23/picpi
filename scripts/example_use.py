@@ -18,6 +18,7 @@ from scripts.example_use_helper import make_teaser_example_data, save_example_fi
 
 
 def main() -> None:
+    """Construct PICPIs, infer intervals for test inputs, and save examples."""
     # The helper supplies example arrays from the Teaser DGP. Replace the first
     # two arrays with predictions and outcomes from your calibration sample.
     (

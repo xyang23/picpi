@@ -19,6 +19,7 @@ from picpi.paths import cached
 
 
 def main() -> None:
+    """Parse user options and launch the GPU diagnostic experiment."""
     parser = argparse.ArgumentParser(
         description="Compute empirical-mode diagnostics results."
     )

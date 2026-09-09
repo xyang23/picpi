@@ -57,6 +57,7 @@ MULTIVARIATE_EPSILON = 0.10
 
 
 def ensure_2d(x):
+    """Convert a feature array to the two-dimensional shape models expect."""
     x = np.asarray(x, dtype=float)
     if x.ndim == 1:
         return x.reshape(-1, 1)
@@ -64,25 +65,30 @@ def ensure_2d(x):
 
 
 def predict_binary_proba(model, x):
+    """Return the fitted model's probability for outcome one."""
     return model.predict_proba(ensure_2d(x))[:, 1]
 
 
 def fit_shared_binary_model(x_train, y_train):
+    """Fit the logistic model shared by the Task 1 comparisons."""
     return LogisticRegression(solver="lbfgs", max_iter=2000).fit(
         ensure_2d(x_train), y_train
     )
 
 
 def p_true_univariate(x, beta: float = UNIVARIATE_BETA):
+    """Evaluate the univariate DGP's conditional outcome probability."""
     return expit(beta * np.asarray(x, dtype=float))
 
 
 def generate_univariate_split(
     n_train, n_cal, n_eval, seed=UNIVARIATE_SEED
 ):
+    """Generate independent training, calibration, and evaluation samples."""
     rng = np.random.default_rng(seed)
 
     def _fold(n):
+        """Draw one noisy univariate sample of the requested size."""
         x = rng.choice(X_GRID, size=n)
         noise = rng.normal(0.0, UNIVARIATE_EPSILON, size=n)
         p = expit(UNIVARIATE_BETA * x + noise)
@@ -93,14 +99,17 @@ def generate_univariate_split(
 
 
 def p_true_multivariate(x, beta0=MULTIVARIATE_BETA0, beta=MULTIVARIATE_BETA):
+    """Evaluate the multivariate DGP's conditional outcome probability."""
     x = ensure_2d(x)
     return expit(beta0 + x @ beta)
 
 
 def generate_multivariate_split(n_train, n_cal, n_eval, seed=0):
+    """Generate the three samples used by one multivariate replication."""
     rng = np.random.default_rng(seed)
 
     def _fold(n):
+        """Draw one noisy multivariate sample of the requested size."""
         x = rng.normal(0.0, 1.0, size=(n, MULTIVARIATE_DIM))
         noise = rng.normal(0.0, MULTIVARIATE_EPSILON, size=n)
         p = expit(MULTIVARIATE_BETA0 + x @ MULTIVARIATE_BETA + noise)
@@ -111,12 +120,14 @@ def generate_multivariate_split(n_train, n_cal, n_eval, seed=0):
 
 
 def p_true_tree(x):
+    """Evaluate the nonlinear truth used in the tree misspecification example."""
     x = np.asarray(x, dtype=float)
     z = 1.2 * np.sin(2.5 * x) + 0.8 * x
     return 1.0 / (1.0 + np.exp(-z))
 
 
 def sample_tree_data(n, rng):
+    """Draw features and outcomes for the tree misspecification example."""
     x = rng.uniform(-2.0, 2.0, size=n)
     p = p_true_tree(x)
     y = rng.binomial(1, p)
@@ -124,6 +135,7 @@ def sample_tree_data(n, rng):
 
 
 def method_simultaneous_band(model, x_train, x_eval, alpha=ALPHA):
+    """Construct simultaneous logistic-regression confidence bands."""
     x_train_2d = ensure_2d(x_train)
     x_eval_2d = ensure_2d(x_eval)
     x_design = np.column_stack([np.ones(len(x_train_2d)), x_train_2d])
@@ -145,6 +157,7 @@ def method_simultaneous_band(model, x_train, x_eval, alpha=ALPHA):
 def build_picpi_partition(
     p_hat_cal, y_cal, num_bins=NUM_BINS_PICPI, mode="empirical", delta=None
 ):
+    """Construct a PICPI partition from held-out calibration predictions."""
     partition = calibration(
         list(zip(range(len(y_cal)), np.asarray(y_cal, dtype=int).tolist())),
         np.asarray(p_hat_cal, dtype=float).tolist(),
@@ -158,6 +171,7 @@ def build_picpi_partition(
 
 
 def assign_partition_interval(scores, partition, expand=0.0):
+    """Assign each predicted score to its partition interval."""
     scores = np.asarray(scores, dtype=float)
     intervals = np.zeros((len(scores), 2), dtype=float)
     for idx, score in enumerate(scores):
@@ -180,11 +194,13 @@ def assign_partition_interval(scores, partition, expand=0.0):
 
 
 def score_in_interval(scores, left, right):
+    """Test membership in a right-closed calibration interval."""
     scores = np.asarray(scores, dtype=float)
     return ((scores > left) & (scores <= right)) | ((left == 0.0) & (scores == 0.0))
 
 
 def compute_calibration_interval_stats(scores, labels, intervals):
+    """Compute interval masses, calibration errors, and aggregate ECE."""
     scores = np.asarray(scores, dtype=float)
     labels = np.asarray(labels, dtype=float)
     masses = []
@@ -205,6 +221,7 @@ def compute_calibration_interval_stats(scores, labels, intervals):
 
 
 def choose_intervals_by_average_ece(errors, masses, target_ece):
+    """Select the lowest-error intervals nearest a target average ECE."""
     errors = np.asarray(errors, dtype=float)
     masses = np.asarray(masses, dtype=float)
     eligible = np.isfinite(errors) & (masses > 0.0)
@@ -234,6 +251,7 @@ def method_picpi(
     mode="empirical",
     delta=None,
 ):
+    """Fit the PICPI method and assign intervals to evaluation inputs."""
     p_hat_cal = predict_binary_proba(model, x_cal)
     p_hat_eval = predict_binary_proba(model, x_eval)
     partition = build_picpi_partition(
@@ -244,6 +262,7 @@ def method_picpi(
 
 
 def method_split_conformal(model, x_cal, y_cal, x_eval, alpha=ALPHA):
+    """Construct split-conformal probability intervals."""
     p_hat_cal = predict_binary_proba(model, x_cal)
     p_hat_eval = predict_binary_proba(model, x_eval)
     scores = np.abs(np.asarray(y_cal, dtype=float) - p_hat_cal)
@@ -267,6 +286,7 @@ def method_calibration_based_interval(
     picpi_partition=None,
     target_ece=None,
 ):
+    """Construct fixed-bin intervals selected to match a target ECE."""
     p_hat_cal = predict_binary_proba(model, x_cal)
     p_hat_eval = predict_binary_proba(model, x_eval)
     edges = np.linspace(0.0, 1.0, num_bins + 1)
@@ -300,6 +320,7 @@ def method_calibration_based_interval(
 
 
 def method_fixed_width_binning(model, x_eval, num_bins=NUM_BINS):
+    """Assign predictions to equal-width probability bins."""
     p_hat_eval = predict_binary_proba(model, x_eval)
     edges = np.linspace(0.0, 1.0, num_bins + 1)
     intervals = np.zeros((len(p_hat_eval), 2), dtype=float)
@@ -310,6 +331,7 @@ def method_fixed_width_binning(model, x_eval, num_bins=NUM_BINS):
 
 
 def compute_interval_metrics(intervals, p_star):
+    """Evaluate interval width, calibration error, and coverage metrics."""
     intervals = np.asarray(intervals, dtype=float)
     p_star = np.asarray(p_star, dtype=float)
     lower = intervals[:, 0]
@@ -339,6 +361,7 @@ def compute_interval_metrics(intervals, p_star):
 def build_task1_results(
     model, x_train, x_cal, y_cal, x_eval, picpi_mode="empirical", picpi_delta=None
 ):
+    """Run every Task 1 method on the same fitted model and data split."""
     intervals_band = method_simultaneous_band(model, x_train, x_eval)
     intervals_picpi, picpi_partition = method_picpi(
         model,
@@ -384,6 +407,7 @@ def build_task1_results(
 
 
 def summarise_task1_results(intervals_by_method, p_star_eval, selected_bins):
+    """Create one comparison row per Task 1 interval method."""
     rows = []
     for method in TASK1_METHOD_ORDER:
         metrics = compute_interval_metrics(intervals_by_method[method], p_star_eval)
@@ -410,6 +434,7 @@ def summarise_task1_results(intervals_by_method, p_star_eval, selected_bins):
 
 
 def compute_univariate_visualization():
+    """Compute all arrays and metrics for the univariate comparison figure."""
     (x_train, y_train), (x_cal, y_cal), (x_eval, _y_eval) = generate_univariate_split(
         UNIVARIATE_N_TRAIN,
         UNIVARIATE_N_CAL,
@@ -435,6 +460,7 @@ def compute_univariate_visualization():
 
 
 def compute_misspecified_tree():
+    """Compute the decision-tree misspecification illustration."""
     rng = np.random.default_rng(MISSPECIFIED_SEED)
     x_train, y_train = sample_tree_data(MISSPECIFIED_N_TRAIN, rng)
     x_cal, y_cal = sample_tree_data(MISSPECIFIED_N_CAL, rng)
@@ -457,6 +483,7 @@ def compute_misspecified_tree():
 
 
 def run_multivariate_rep(seed):
+    """Run one seeded replication of the multivariate comparison."""
     (x_train, y_train), (x_cal, y_cal), (x_eval, _y_eval) = generate_multivariate_split(
         MULTIVARIATE_N_TRAIN,
         MULTIVARIATE_N_CAL,
@@ -474,6 +501,7 @@ def run_multivariate_rep(seed):
 
 
 def compute_multivariate_table(n_mc: int = N_MC_TABLE):
+    """Run and combine the requested multivariate Monte Carlo replications."""
     frames = []
     for seed in tqdm(range(n_mc), desc="Task 1 multivariate replications"):
         rep_df = run_multivariate_rep(seed)
@@ -483,6 +511,7 @@ def compute_multivariate_table(n_mc: int = N_MC_TABLE):
 
 
 def aggregate_multivariate_table(mc_results: pd.DataFrame) -> pd.DataFrame:
+    """Summarize Task 1 Monte Carlo metrics by method."""
     return (
         mc_results.groupby("Method", sort=False)
         .agg(
@@ -506,6 +535,7 @@ def save_task1(
     mc_results: pd.DataFrame,
     output_dir: Path | None = None,
 ) -> Path:
+    """Save all Task 1 arrays and tabular results."""
     output_dir = Path(output_dir) if output_dir is not None else cached("task1")
     output_dir.mkdir(parents=True, exist_ok=True)
     np.savez(
@@ -538,6 +568,7 @@ def save_task1(
 
 
 def load_task1(output_dir: Path | None = None) -> dict[str, object]:
+    """Load the stored Task 1 arrays and tables used for plotting."""
     output_dir = Path(output_dir) if output_dir is not None else cached("task1")
     uni = np.load(output_dir / "univariate_visualization.npz")
     methods = np.load(output_dir / "method_order.npy", allow_pickle=True).tolist()

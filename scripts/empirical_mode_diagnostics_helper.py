@@ -109,10 +109,12 @@ class IntervalIndices:
     right: torch.Tensor
 
     def __len__(self) -> int:
+        """Return the number of stored intervals."""
         return int(self.left.numel())
 
 
 def parse_gpu_ids(raw: str) -> list[int]:
+    """Parse a comma-separated CUDA device list."""
     ids = [int(part.strip()) for part in raw.split(",") if part.strip()]
     if not ids:
         raise argparse.ArgumentTypeError("--gpu-ids must contain at least one id")
@@ -129,6 +131,7 @@ def adaptive_num_bin(n_calib: int, c_value: float) -> int:
 
 
 def make_edges(num_bin: int, device: torch.device) -> torch.Tensor:
+    """Create evenly spaced probability-bin edges on a device."""
     return torch.linspace(0.0, 1.0, num_bin + 1, device=device, dtype=torch.float64)
 
 
@@ -137,6 +140,7 @@ def empty_binned_stats(
     device: torch.device,
     include_p_true: bool,
 ) -> BinnedStats:
+    """Allocate zero-filled sufficient statistics for probability bins."""
     return BinnedStats(
         counts=torch.zeros(num_bin, device=device, dtype=torch.int64),
         successes=torch.zeros(num_bin, device=device, dtype=torch.float64),
@@ -316,6 +320,7 @@ def intervals_to_numpy(
     intervals: IntervalIndices,
     num_bin: int,
 ) -> np.ndarray:
+    """Convert interval indices into numeric endpoint pairs."""
     if len(intervals) == 0:
         return np.empty((0, 2), dtype=np.float64)
     return np.column_stack(
@@ -327,6 +332,7 @@ def intervals_to_numpy(
 
 
 def _empty_metrics(n_intervals: int, n_empty: int) -> dict[str, float | int]:
+    """Return a consistently shaped record when evaluation is empty."""
     return {
         "n_intervals": n_intervals,
         "eval_nonempty_intervals": 0,
@@ -546,6 +552,7 @@ def worker_run(
 ) -> tuple[
     list[dict[str, float | int | str]], list[dict[str, float | int | bool | str]]
 ]:
+    """Process one task shard on a GPU and return summary and interval rows."""
     device = torch.device(f"cuda:{gpu_id}")
     torch.cuda.set_device(device)
     torch.set_grad_enabled(False)
@@ -648,6 +655,7 @@ def build_tasks(
     num_bin: int = 100,
     adaptive_c: float | None = None,
 ) -> list[Task]:
+    """Build reproducibly seeded diagnostic tasks across sample sizes."""
     master_rng = np.random.default_rng(seed + 424_242)
     tasks: list[Task] = []
     for n_idx, n_calib in enumerate(n_grid):
@@ -671,6 +679,7 @@ def build_tasks(
 
 
 def shard_tasks(tasks: list[Task], num_shards: int) -> list[list[Task]]:
+    """Distribute tasks round-robin across GPU workers."""
     shards = [[] for _ in range(num_shards)]
     for index, task in enumerate(tasks):
         shards[index % num_shards].append(task)
@@ -678,6 +687,7 @@ def shard_tasks(tasks: list[Task], num_shards: int) -> list[list[Task]]:
 
 
 def validate_cuda(gpu_ids: list[int]) -> None:
+    """Check that CUDA and every requested device are available."""
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA is not available; this script requires a CUDA GPU.")
     device_count = torch.cuda.device_count()
@@ -689,6 +699,7 @@ def validate_cuda(gpu_ids: list[int]) -> None:
 
 
 def aggregate_results(results: pd.DataFrame) -> pd.DataFrame:
+    """Summarize held-out diagnostic metrics across replications."""
     return (
         results.groupby(["n_calib", "K", "method"], as_index=False)
         .agg(
@@ -705,6 +716,7 @@ def aggregate_results(results: pd.DataFrame) -> pd.DataFrame:
 
 
 def aggregate_interval_widths(interval_results: pd.DataFrame) -> pd.DataFrame:
+    """Summarize pass rates and frequencies by exact interval width."""
     width_results = interval_results.copy()
     width_results["interval_length"] = (
         width_results["interval_length"].astype(float).round(12)
@@ -772,6 +784,7 @@ def save_figures(
     width_summary: pd.DataFrame,
     output_dir: Path,
 ) -> None:
+    """Save diagnostic pass-rate and interval-width figures."""
     plt.style.use("seaborn-v0_8")
     method_styles = {
         "Empirical mode": {"color": "tab:blue", "marker": "o"},
@@ -902,6 +915,7 @@ def save_figures(
 
 
 def main() -> None:
+    """Run the GPU diagnostics and save raw, summary, and figure outputs."""
     parser = argparse.ArgumentParser(
         description=(
             "Reproduce empirical-mode PICPI diagnostics with chunked GPU "

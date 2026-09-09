@@ -29,6 +29,7 @@ MC_SEED = 12345
 
 
 def _p_star_noisy(x: np.ndarray, rng: np.random.Generator) -> np.ndarray:
+    """Draw noisy ground-truth probabilities for the teaser DGP."""
     x = np.asarray(x, dtype=float)
     z = (
         DGP_INTERCEPT
@@ -40,6 +41,7 @@ def _p_star_noisy(x: np.ndarray, rng: np.random.Generator) -> np.ndarray:
 
 
 def p_star_conditional_mc(x: np.ndarray, seed: int = MC_SEED) -> np.ndarray:
+    """Approximate conditional outcome probabilities by Monte Carlo averaging."""
     x = np.asarray(x, dtype=float)
     local_rng = np.random.default_rng(seed)
     eps = local_rng.normal(0.0, DGP_NOISE_SD, size=(MC_SAMPLES, x.size))
@@ -55,6 +57,7 @@ def p_star_conditional_mc(x: np.ndarray, seed: int = MC_SEED) -> np.ndarray:
 def summarize_intervals(
     score: np.ndarray, y_ind: np.ndarray, intervals: list[tuple[float, float]]
 ) -> pd.DataFrame:
+    """Compute counts and observed outcome means for each PICPI."""
     score = np.asarray(score, dtype=float)
     y_ind = np.asarray(y_ind, dtype=int)
     rows = []
@@ -74,9 +77,11 @@ def summarize_intervals(
 
 
 def compute_teaser(seed: int = SEED) -> dict[str, object]:
+    """Generate the data and fitted-model outputs used by the teaser figure."""
     rng = np.random.default_rng(seed)
 
     def sample_data(n: int) -> tuple[np.ndarray, np.ndarray]:
+        """Draw one feature-and-outcome sample from the teaser DGP."""
         x = rng.uniform(-2, 2, size=n)
         p = _p_star_noisy(x, rng)
         y = rng.binomial(1, p)
@@ -108,6 +113,7 @@ def compute_teaser(seed: int = SEED) -> dict[str, object]:
 
 
 def save_teaser(payload: dict[str, object], output_dir: Path | None = None) -> Path:
+    """Write teaser scatter data and interval summaries to disk."""
     output_dir = Path(output_dir) if output_dir is not None else cached("teaser")
     output_dir.mkdir(parents=True, exist_ok=True)
     np.savez(
@@ -120,6 +126,7 @@ def save_teaser(payload: dict[str, object], output_dir: Path | None = None) -> P
 
 
 def load_teaser(output_dir: Path | None = None) -> dict[str, object]:
+    """Load the stored inputs required to redraw the teaser figure."""
     output_dir = Path(output_dir) if output_dir is not None else cached("teaser")
     scatter = np.load(output_dir / "scatter.npz")
     return {

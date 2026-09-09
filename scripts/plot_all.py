@@ -30,6 +30,7 @@ from scripts.teaser_helper import load_teaser
 
 
 def main() -> None:
+    """Verify cached summaries and reproduce every paper figure and table."""
     out = figures_dir()
     teaser = load_teaser()
     print("teaser", plot_teaser(teaser, out))

@@ -61,6 +61,7 @@ CURVE_METHOD_STYLES = {
 
 
 def _save(fig: plt.Figure, path: Path) -> Path:
+    """Save a figure with the shared layout settings and close it."""
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path, bbox_inches="tight")
     png_path = path.with_suffix(".png")
@@ -172,6 +173,7 @@ def plot_teaser(payload: dict[str, object], output_dir: Path | None = None) -> P
 
 
 def format_n(n: int) -> str:
+    """Format large sample sizes compactly for plot labels."""
     if n >= 1_000:
         exponent = int(math.floor(math.log10(n)))
         coefficient = n / (10**exponent)
@@ -512,6 +514,7 @@ def plot_task1_tree(tree: dict[str, object], output_dir: Path | None = None) -> 
 
 
 def _format_mean_sd(mean: float, sd: float, percent: bool = False) -> str:
+    """Format a table entry as a mean with its standard deviation."""
     if np.isnan(mean):
         return "--"
     if percent:
@@ -567,6 +570,7 @@ def write_task1_table(
 
 
 def load_task2_bundles(results_dir: Path) -> dict[str, dict[str, object]]:
+    """Load Task 2 summaries and configuration files for each DGP."""
     bundles = {}
     for dgp_name in DGP_DISPLAY_ORDER:
         dgp_dir = Path(results_dir) / dgp_name

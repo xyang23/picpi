@@ -162,6 +162,7 @@ DEFAULT_CONFIG = SweepConfig()
 
 
 def plugin_interval_configs(cfg: SweepConfig) -> tuple[tuple[str, str, int | None], ...]:
+    """List the plug-in interval variants enabled by the sweep configuration."""
     return (
         ("PICPI", "picpi", cfg.num_bins_picpi),
         ("Split conformal prediction", "split_conformal_neighborhood", None),
@@ -171,6 +172,7 @@ def plugin_interval_configs(cfg: SweepConfig) -> tuple[tuple[str, str, int | Non
 
 
 def effective_parallel_backend(requested_backend: str, n_workers: int) -> str:
+    """Resolve automatic parallelism to a concrete execution backend."""
     if n_workers <= 1:
         return "serial"
     if requested_backend == "threads":
@@ -181,6 +183,7 @@ def effective_parallel_backend(requested_backend: str, n_workers: int) -> str:
 
 
 def ensure_2d_array(x: np.ndarray, expected_features: int | None = None) -> np.ndarray:
+    """Normalize features to a two-dimensional array and validate its width."""
     x = np.asarray(x, dtype=float)
     if x.ndim == 1:
         x = x.reshape(-1, 1)
@@ -192,6 +195,7 @@ def ensure_2d_array(x: np.ndarray, expected_features: int | None = None) -> np.n
 
 
 def softmax(logits: np.ndarray) -> np.ndarray:
+    """Convert row-wise logits into numerically stable class probabilities."""
     logits = np.asarray(logits, dtype=float)
     centered = logits - logits.max(axis=1, keepdims=True)
     exp_logits = np.exp(centered)
@@ -203,10 +207,12 @@ UNIVARIATE_BIASES = np.array([0.25, 0.00, -0.05, -0.20], dtype=float)
 
 
 def sample_univariate_softmax_features(rng: np.random.Generator, n: int) -> np.ndarray:
+    """Draw features for the univariate softmax DGP."""
     return rng.uniform(-2.0, 2.0, size=(n, 1))
 
 
 def univariate_softmax_probabilities(x: np.ndarray) -> np.ndarray:
+    """Evaluate class probabilities for the univariate softmax DGP."""
     x = ensure_2d_array(x, expected_features=1)[:, 0]
     logits = x[:, None] * UNIVARIATE_SLOPES[None, :] + UNIVARIATE_BIASES[None, :]
     return softmax(logits)
@@ -225,10 +231,12 @@ GAUSSIAN_LINEAR_B = np.array([0.4, -0.1, 0.2, -0.3], dtype=float)
 
 
 def sample_gaussian_linear_d3_features(rng: np.random.Generator, n: int) -> np.ndarray:
+    """Draw three-dimensional Gaussian features for the linear DGP."""
     return rng.normal(size=(n, 3))
 
 
 def gaussian_linear_d3_probabilities(x: np.ndarray) -> np.ndarray:
+    """Evaluate class probabilities for the three-dimensional linear DGP."""
     x = ensure_2d_array(x, expected_features=3)
     logits = x @ GAUSSIAN_LINEAR_W.T + GAUSSIAN_LINEAR_B
     return softmax(logits)
@@ -248,10 +256,12 @@ GAUSSIAN_NONLINEAR_LOADINGS = np.array([0.55, -0.35, 0.10, -0.40], dtype=float)
 
 
 def sample_gaussian_nonlinear_d5_features(rng: np.random.Generator, n: int) -> np.ndarray:
+    """Draw five-dimensional Gaussian features for the nonlinear DGP."""
     return rng.normal(size=(n, 5))
 
 
 def gaussian_nonlinear_d5_probabilities(x: np.ndarray) -> np.ndarray:
+    """Evaluate class probabilities for the five-dimensional nonlinear DGP."""
     x = ensure_2d_array(x, expected_features=5)
     nonlinear_basis = (x[:, 0] ** 2 - 1.0)[:, None]
     logits = x @ GAUSSIAN_NONLINEAR_W.T + GAUSSIAN_NONLINEAR_B + nonlinear_basis * GAUSSIAN_NONLINEAR_LOADINGS[None, :]
@@ -361,6 +371,7 @@ TRUE_BIASES -= TRUE_BIASES.mean()
 
 
 def sample_population_prototype_features(rng: np.random.Generator, n: int) -> np.ndarray:
+    """Draw features for the population-prototype DGP."""
     component_ids = rng.choice(len(DGP_COMPONENT_WEIGHTS), size=n, p=DGP_COMPONENT_WEIGHTS)
     x = np.zeros((n, POPULATION_N_FEATURES), dtype=float)
     for comp_id in range(len(DGP_COMPONENT_WEIGHTS)):
@@ -399,6 +410,7 @@ def sample_population_prototype_features(rng: np.random.Generator, n: int) -> np
 
 
 def population_interactions(x: np.ndarray) -> np.ndarray:
+    """Build interaction features used by the population DGP."""
     x = ensure_2d_array(x, expected_features=POPULATION_N_FEATURES)
     return np.column_stack(
         [
@@ -417,6 +429,7 @@ def population_interactions(x: np.ndarray) -> np.ndarray:
 
 
 def population_nonlinear_basis(x: np.ndarray) -> np.ndarray:
+    """Build nonlinear basis features used by the population DGP."""
     x = ensure_2d_array(x, expected_features=POPULATION_N_FEATURES)
     return np.column_stack(
         [
@@ -435,12 +448,14 @@ def population_nonlinear_basis(x: np.ndarray) -> np.ndarray:
 
 
 def population_rbf_basis(x: np.ndarray) -> np.ndarray:
+    """Evaluate radial-basis features around the population prototypes."""
     x = ensure_2d_array(x, expected_features=POPULATION_N_FEATURES)
     rbf_sq_dist = ((x[:, None, :] - RBF_CENTERS[None, :, :]) ** 2 * RBF_INV_SCALES[None, :, None]).sum(axis=2)
     return np.exp(-rbf_sq_dist)
 
 
 def population_context_shift(x: np.ndarray) -> np.ndarray:
+    """Compute the context-dependent class-logit shift."""
     x = ensure_2d_array(x, expected_features=POPULATION_N_FEATURES)
     context_basis = np.column_stack(
         [
@@ -454,6 +469,7 @@ def population_context_shift(x: np.ndarray) -> np.ndarray:
 
 
 def population_temperature(x: np.ndarray) -> np.ndarray:
+    """Compute the feature-dependent softmax temperature."""
     x = ensure_2d_array(x, expected_features=POPULATION_N_FEATURES)
     return np.clip(
         0.86 + 0.22 * np.tanh(0.60 * x[:, 0] - 0.35 * x[:, 3] + 0.20 * x[:, 8]),
@@ -463,11 +479,13 @@ def population_temperature(x: np.ndarray) -> np.ndarray:
 
 
 def population_linear_raw_logits(x: np.ndarray) -> np.ndarray:
+    """Compute the linear component of the population DGP logits."""
     x = ensure_2d_array(x, expected_features=POPULATION_N_FEATURES)
     return x @ TRUE_LINEAR_WEIGHTS
 
 
 def population_h_raw_logits(x: np.ndarray) -> np.ndarray:
+    """Compute the higher-order component of the population DGP logits."""
     x = ensure_2d_array(x, expected_features=POPULATION_N_FEATURES)
     return (
         (x**2) @ TRUE_QUADRATIC_WEIGHTS
@@ -479,18 +497,21 @@ def population_h_raw_logits(x: np.ndarray) -> np.ndarray:
 
 
 def population_nonlinear_probabilities(x: np.ndarray) -> np.ndarray:
+    """Evaluate probabilities using only the nonlinear population component."""
     x = ensure_2d_array(x, expected_features=POPULATION_N_FEATURES)
     logits = (population_linear_raw_logits(x) + TRUE_BIASES[None, :]) / population_temperature(x)[:, None]
     return softmax(logits)
 
 
 def population_h_only_probabilities(x: np.ndarray) -> np.ndarray:
+    """Evaluate probabilities using only the higher-order logit component."""
     x = ensure_2d_array(x, expected_features=POPULATION_N_FEATURES)
     logits = (population_h_raw_logits(x) + TRUE_BIASES[None, :]) / population_temperature(x)[:, None]
     return softmax(logits)
 
 
 def population_full_probabilities(x: np.ndarray) -> np.ndarray:
+    """Evaluate probabilities under the complete population DGP."""
     x = ensure_2d_array(x, expected_features=POPULATION_N_FEATURES)
     logits = (
         population_linear_raw_logits(x)
@@ -513,10 +534,12 @@ TRUE_LINEAR_GAUSSIAN_D10_B = np.array([0.25, -0.20, 0.15, -0.20], dtype=float)
 
 
 def sample_true_linear_gaussian_d10_features(rng: np.random.Generator, n: int) -> np.ndarray:
+    """Draw ten-dimensional Gaussian features for the true-linear DGP."""
     return rng.normal(size=(n, 10))
 
 
 def true_linear_gaussian_d10_probabilities(x: np.ndarray) -> np.ndarray:
+    """Evaluate probabilities for the ten-dimensional true-linear DGP."""
     x = ensure_2d_array(x, expected_features=10)
     logits = x @ TRUE_LINEAR_GAUSSIAN_D10_W.T + TRUE_LINEAR_GAUSSIAN_D10_B
     return softmax(logits)
@@ -568,6 +591,7 @@ DGP_DISPLAY_ORDER = tuple(DGP_REGISTRY.keys())
 
 
 def sample_multiclass_labels(rng: np.random.Generator, q: np.ndarray) -> np.ndarray:
+    """Draw one class label per row of class probabilities."""
     q = np.asarray(q, dtype=float)
     cumulative = np.cumsum(q, axis=1)
     uniforms = rng.random(size=(q.shape[0], 1))
@@ -575,9 +599,11 @@ def sample_multiclass_labels(rng: np.random.Generator, q: np.ndarray) -> np.ndar
 
 
 def generate_split_data(cfg: SweepConfig, dgp: DGPDefinition, seed: int) -> tuple[tuple[np.ndarray, np.ndarray, np.ndarray], ...]:
+    """Generate training, calibration, and evaluation folds for one DGP."""
     rng = np.random.default_rng(seed)
 
     def _fold(n: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Draw features, labels, and true probabilities for one fold."""
         x = dgp.sample_features(rng, n)
         q = dgp.true_class_probabilities(x)
         y = sample_multiclass_labels(rng, q)
@@ -587,6 +613,7 @@ def generate_split_data(cfg: SweepConfig, dgp: DGPDefinition, seed: int) -> tupl
 
 
 def align_multiclass_probabilities(model: LogisticRegression, x: np.ndarray, n_classes: int) -> np.ndarray:
+    """Align fitted probability columns with the complete class index."""
     probabilities = model.predict_proba(x)
     aligned = np.zeros((len(x), n_classes), dtype=float)
     for idx, class_id in enumerate(np.asarray(model.classes_, dtype=int)):
@@ -595,6 +622,7 @@ def align_multiclass_probabilities(model: LogisticRegression, x: np.ndarray, n_c
 
 
 def predict_binary_positive_proba(model: LogisticRegression, x: np.ndarray) -> np.ndarray:
+    """Return positive-outcome probabilities, including constant-label fits."""
     x = ensure_2d_array(x)
     probabilities = model.predict_proba(x)
     classes = np.asarray(model.classes_, dtype=int)
@@ -605,6 +633,7 @@ def predict_binary_positive_proba(model: LogisticRegression, x: np.ndarray) -> n
 
 
 def fit_binary_ci_helper(x_train: np.ndarray, y_train_binary: np.ndarray) -> dict[str, object]:
+    """Fit one binary model and retain quantities needed for confidence bands."""
     x_train = ensure_2d_array(x_train)
     y_train_binary = np.asarray(y_train_binary, dtype=int)
     unique_labels = np.unique(y_train_binary)
@@ -630,6 +659,7 @@ def fit_binary_ci_helper(x_train: np.ndarray, y_train_binary: np.ndarray) -> dic
 
 
 def simultaneous_ci_intervals_from_helper(helper: dict[str, object], x_eval: np.ndarray, alpha: float) -> np.ndarray:
+    """Construct simultaneous intervals from a fitted binary-model helper."""
     x_eval = ensure_2d_array(x_eval)
     if helper["kind"] == "constant":
         constant_prob = float(helper["constant_prob"])
@@ -650,6 +680,7 @@ def simultaneous_ci_intervals_from_helper(helper: dict[str, object], x_eval: np.
 
 
 def fit_shared_model(cfg: SweepConfig, dgp: DGPDefinition, seed: int) -> dict[str, object]:
+    """Fit the models and cache shared predictions for one seeded DGP split."""
     (x_train, y_train, q_train), (x_cal, y_cal, q_cal), (x_eval, y_eval, q_eval) = generate_split_data(cfg, dgp, seed=seed)
     x_train = ensure_2d_array(x_train, expected_features=dgp.n_features)
     x_cal = ensure_2d_array(x_cal, expected_features=dgp.n_features)
@@ -783,6 +814,7 @@ def run_parallel_seed_jobs(
     *,
     backend: str,
 ) -> list[pd.DataFrame]:
+    """Run seeded jobs with the requested backend while preserving seed order."""
     seeds = list(seeds)
     if len(seeds) == 0:
         return []
@@ -804,6 +836,7 @@ def run_parallel_seed_jobs(
 
 
 def lower_tail_conformal_threshold(scores: np.ndarray, alpha: float = DEFAULT_ALPHA) -> float:
+    """Return the finite-sample lower-tail conformal order statistic."""
     scores = np.sort(np.asarray(scores, dtype=float))
     k = int(np.ceil((len(scores) + 1) * float(alpha)))
     k = min(max(k, 1), len(scores))
@@ -811,11 +844,13 @@ def lower_tail_conformal_threshold(scores: np.ndarray, alpha: float = DEFAULT_AL
 
 
 def score_in_interval(scores: np.ndarray, left: float, right: float) -> np.ndarray:
+    """Test score membership in a right-closed probability interval."""
     scores = np.asarray(scores, dtype=float)
     return ((scores > left) & (scores <= right)) | ((left == 0.0) & (scores == 0.0))
 
 
 def intervals_are_disjoint(intervals: Sequence[tuple[float, float]]) -> bool:
+    """Check whether a collection of intervals has no interior overlap."""
     if len(intervals) <= 1:
         return True
     ordered = sorted(intervals)
@@ -826,6 +861,7 @@ def intervals_are_disjoint(intervals: Sequence[tuple[float, float]]) -> bool:
 
 
 def weighted_interval_scheduling(intervals: Sequence[tuple[float, float]], weights: np.ndarray) -> list[int]:
+    """Select a maximum-weight nonoverlapping subset of intervals."""
     if len(intervals) == 0:
         return []
 
@@ -862,6 +898,7 @@ def weighted_interval_scheduling(intervals: Sequence[tuple[float, float]], weigh
 
 
 def select_disjoint_intervals(raw_intervals: np.ndarray | Sequence[tuple[float, float]], reference_scores: np.ndarray) -> list[tuple[float, float]]:
+    """Deduplicate intervals and retain a high-mass disjoint subset."""
     intervals = sorted({(float(left), float(right)) for left, right in np.asarray(raw_intervals, dtype=float)})
     if len(intervals) == 0:
         return []
@@ -883,11 +920,13 @@ def select_disjoint_intervals(raw_intervals: np.ndarray | Sequence[tuple[float, 
 
 
 def calibration_tau_from_upper_matrix(upper_cal: np.ndarray, y_cal: np.ndarray, alpha: float = DEFAULT_ALPHA) -> float:
+    """Calibrate an inclusion threshold from true-label upper endpoints."""
     true_label_scores = upper_cal[np.arange(len(y_cal)), y_cal]
     return lower_tail_conformal_threshold(true_label_scores, alpha=alpha)
 
 
 def build_empirical_interval_stats(scores: np.ndarray, labels_binary: np.ndarray, num_bins: int) -> dict[str, object]:
+    """Construct empirical PICPIs and their classwise calibration statistics."""
     scores = np.asarray(scores, dtype=float)
     labels_binary = np.asarray(labels_binary, dtype=int)
     raw_intervals = calibration(
@@ -917,6 +956,7 @@ def build_empirical_interval_stats(scores: np.ndarray, labels_binary: np.ndarray
 
 
 def build_fixed_bin_interval_stats(scores: np.ndarray, labels_binary: np.ndarray, num_bins: int) -> dict[str, object]:
+    """Construct equal-width bins and their classwise calibration statistics."""
     scores = np.asarray(scores, dtype=float)
     labels_binary = np.asarray(labels_binary, dtype=int)
     edges = np.linspace(0.0, 1.0, num_bins + 1)
@@ -942,6 +982,7 @@ def build_fixed_bin_interval_stats(scores: np.ndarray, labels_binary: np.ndarray
 
 
 def upper_conformal_quantile(scores: np.ndarray, alpha: float) -> float:
+    """Return the finite-sample upper conformal quantile."""
     scores = np.sort(np.asarray(scores, dtype=float))
     n_scores = len(scores)
     if n_scores == 0:
@@ -960,6 +1001,7 @@ def build_interval_stats_from_intervals(
     intervals: Sequence[tuple[float, float]],
     strategy_name: str,
 ) -> dict[str, object]:
+    """Compute calibration statistics for an explicit interval collection."""
     scores = np.asarray(scores, dtype=float)
     labels_binary = np.asarray(labels_binary, dtype=int)
     intervals = sorted({(float(left), float(right)) for left, right in intervals})
@@ -1009,6 +1051,7 @@ def build_interval_stats_from_intervals(
 
 
 def build_simultaneous_ci_interval_stats(state: dict[str, object], cfg: SweepConfig, alpha: float) -> dict[int, dict[str, object]]:
+    """Build classwise statistics from simultaneous confidence intervals."""
     x_cal = np.asarray(state["x_cal"], dtype=float)
     y_cal = np.asarray(state["y_cal"], dtype=int)
     p_hat_cal = np.asarray(state["p_hat_cal"], dtype=float)
@@ -1029,12 +1072,14 @@ def build_simultaneous_ci_interval_stats(state: dict[str, object], cfg: SweepCon
 
 
 def classwise_interval_ece_threshold(classwise_stats: dict[int, dict[str, object]]) -> float:
+    """Average finite interval-ECE values across classes."""
     ece_values = [float(stats.get("interval_ece", 0.0)) for stats in classwise_stats.values()]
     finite_values = [value for value in ece_values if np.isfinite(value)]
     return float(np.mean(finite_values)) if finite_values else np.inf
 
 
 def choose_intervals_by_average_ece(errors: np.ndarray, masses: np.ndarray, target_ece: float) -> np.ndarray:
+    """Select low-error intervals nearest a target average ECE."""
     errors = np.asarray(errors, dtype=float)
     masses = np.asarray(masses, dtype=float)
     eligible = np.isfinite(errors) & (masses > 0.0)
@@ -1060,6 +1105,7 @@ def build_split_conformal_neighborhood_stats(
     cfg: SweepConfig,
     alpha: float,
 ) -> dict[int, dict[str, object]]:
+    """Build classwise neighborhoods using split-conformal residual widths."""
     p_hat_cal = np.asarray(state["p_hat_cal"], dtype=float)
     y_cal = np.asarray(state["y_cal"], dtype=int)
     seed = int(state["seed"])
@@ -1111,6 +1157,7 @@ def build_calibration_based_interval_stats(
     alpha: float = DEFAULT_ALPHA,
     picpi_stats: dict[int, dict[str, object]] | None = None,
 ) -> dict[int, dict[str, object]]:
+    """Build fixed-bin classwise intervals matched to PICPI calibration error."""
     del alpha  # kept for interface parity with the notebook implementation
     p_hat_cal = np.asarray(state["p_hat_cal"], dtype=float)
     y_cal = np.asarray(state["y_cal"], dtype=int)
@@ -1187,6 +1234,7 @@ def build_classwise_interval_stats(
     num_bins: int | None = None,
     alpha: float = DEFAULT_ALPHA,
 ) -> dict[int, dict[str, object]]:
+    """Dispatch construction of classwise statistics for one interval strategy."""
     p_hat_cal = np.asarray(state["p_hat_cal"], dtype=float)
     y_cal = np.asarray(state["y_cal"], dtype=int)
 
@@ -1331,6 +1379,7 @@ def solve_cover_min_mass_milp(
     threshold: float,
     scale: int,
 ) -> tuple[np.ndarray, float, bool, str]:
+    """Solve minimum-mass coverage with MILP, falling back to dynamic programming."""
     contributions = np.asarray(contributions, dtype=float)
     masses = np.asarray(masses, dtype=float)
     n_items = len(masses)
@@ -1357,6 +1406,7 @@ def solve_cover_min_mass_milp(
 
 
 def solve_cover_min_mass(contributions: np.ndarray, masses: np.ndarray, threshold: float, scale: int) -> tuple[np.ndarray, float, bool, str]:
+    """Solve the configured minimum-mass interval-cover problem."""
     contributions = np.asarray(contributions, dtype=float)
     masses = np.asarray(masses, dtype=float)
     n_items = len(masses)
@@ -1372,6 +1422,7 @@ def solve_cover_min_mass(contributions: np.ndarray, masses: np.ndarray, threshol
 
 
 def gamma_values(stats: dict[str, object], selected_mask: np.ndarray) -> dict[str, float]:
+    """Compute upper, lower, and combined gamma values for a subset."""
     selected_mask = np.asarray(selected_mask, dtype=bool)
     pi_hat = float(stats["pi_hat"])
     if pi_hat <= 0.0:
@@ -1387,6 +1438,7 @@ def gamma_values(stats: dict[str, object], selected_mask: np.ndarray) -> dict[st
 
 
 def solve_population_subset_for_class(stats: dict[str, object], alpha: float, scale: int) -> dict[str, object]:
+    """Choose the minimum-mass feasible interval subset for one class."""
     m_hat = np.asarray(stats["m_hat"], dtype=float)
     a = np.asarray(stats["a"], dtype=float)
     b = np.asarray(stats["b"], dtype=float)
@@ -1444,6 +1496,7 @@ def solve_population_subset_for_class(stats: dict[str, object], alpha: float, sc
 
 
 def solve_population_plugin(classwise_stats: dict[int, dict[str, object]], alpha_vector: np.ndarray, scale: int) -> dict[str, object]:
+    """Solve the population plug-in subset problem independently by class."""
     alpha_vector = np.asarray(alpha_vector, dtype=float)
     class_solutions = {}
     selected_masks = {}
@@ -1459,6 +1512,7 @@ def build_inclusion_matrix(
     classwise_stats: dict[int, dict[str, object]],
     selected_masks: dict[int, np.ndarray],
 ) -> np.ndarray:
+    """Mark each evaluation row and class included by selected intervals."""
     p_hat = np.asarray(p_hat, dtype=float)
     included = np.zeros_like(p_hat, dtype=bool)
     for class_id, stats in classwise_stats.items():
@@ -1478,6 +1532,7 @@ def evaluate_inclusion_matrix(
     alpha_target: float = np.nan,
     tau: float = np.nan,
 ) -> pd.DataFrame:
+    """Evaluate classwise coverage and set size from boolean inclusions."""
     included = np.asarray(included, dtype=bool)
     prediction_set_mean_size = float(included.sum(axis=1).mean())
     prediction_set_nonempty_rate = float(included.any(axis=1).mean())
@@ -1513,6 +1568,7 @@ def evaluate_upper_matrix(
     *,
     alpha_target: float = np.nan,
 ) -> pd.DataFrame:
+    """Threshold upper endpoints and evaluate the resulting label sets."""
     included = np.asarray(upper_eval, dtype=float) >= float(tau)
     prediction_set_mean_size = float(included.sum(axis=1).mean())
     prediction_set_nonempty_rate = float(included.any(axis=1).mean())
@@ -1546,6 +1602,7 @@ def evaluate_method_output(
     y_eval: np.ndarray,
     tau_override: float | None = None,
 ) -> pd.DataFrame:
+    """Evaluate either inclusion-based or upper-endpoint method output."""
     if output["output_type"] == "included":
         return evaluate_inclusion_matrix(
             name,
@@ -1569,6 +1626,7 @@ def evaluate_method_output(
 
 
 def _constant_group_metric(method_df: pd.DataFrame, column: str) -> float:
+    """Extract a metric required to be constant within a method group."""
     values = pd.unique(method_df[column].to_numpy())
     if len(values) != 1:
         raise ValueError(f"{column} should be constant within each method summary group.")
@@ -1576,6 +1634,7 @@ def _constant_group_metric(method_df: pd.DataFrame, column: str) -> float:
 
 
 def _constant_or_nan(method_df: pd.DataFrame, column: str) -> float:
+    """Extract one nonmissing group value, or return NaN when absent."""
     values = pd.unique(method_df[column].dropna().to_numpy())
     if len(values) == 0:
         return np.nan
@@ -1585,6 +1644,7 @@ def _constant_or_nan(method_df: pd.DataFrame, column: str) -> float:
 
 
 def summarize_method_rows(method_df: pd.DataFrame) -> dict[str, float | str]:
+    """Collapse class-level evaluation rows into one method summary."""
     return {
         "method": method_df["method"].iloc[0],
         "tau": _constant_or_nan(method_df, "tau"),
@@ -1600,6 +1660,7 @@ def summarize_method_rows(method_df: pd.DataFrame) -> dict[str, float | str]:
 
 
 def summarize_coverage_curve_rows(method: str, method_rows: pd.DataFrame, seed: int, target_coverage: float) -> dict[str, float | str]:
+    """Create one seeded coverage-curve record for a method and target."""
     summary = summarize_method_rows(method_rows)
     summary["method"] = method
     summary["seed"] = seed
@@ -1616,6 +1677,7 @@ def build_simultaneous_ci_output(
     x_target: np.ndarray | None = None,
     alpha: float = DEFAULT_ALPHA,
 ) -> dict[str, object]:
+    """Build calibrated simultaneous-CI output for target feature rows."""
     x_cal = np.asarray(state["x_cal"], dtype=float)
     y_cal = np.asarray(state["y_cal"], dtype=int)
     if x_target is None:
@@ -1649,6 +1711,7 @@ def build_conformal_classification_output(
     p_hat_target: np.ndarray | None = None,
     alpha: float = DEFAULT_ALPHA,
 ) -> dict[str, object]:
+    """Build standard conformal-classification label-set output."""
     y_cal = np.asarray(state["y_cal"], dtype=int)
     p_hat_cal = np.asarray(state["p_hat_cal"], dtype=float)
     if p_hat_target is None:
@@ -1686,6 +1749,7 @@ def build_plugin_stats_for_target(
     simultaneous_ci_stats: dict[int, dict[str, object]] | None = None,
     picpi_stats: dict[int, dict[str, object]] | None = None,
 ) -> dict[int, dict[str, object]]:
+    """Build or reuse interval statistics for one plug-in strategy."""
     if strategy_key == "simultaneous_ci":
         return (
             simultaneous_ci_stats
@@ -1704,6 +1768,7 @@ def build_plugin_stats_for_target(
 
 
 def run_method_coverage_sweep(seed: int, dgp: DGPDefinition, cfg: SweepConfig) -> pd.DataFrame:
+    """Evaluate every Task 2 method and coverage target for one seed."""
     # Each (spawned) worker re-imports this module fresh, so set the process-local
     # solver from the config here, before any solve runs.
     global _ACTIVE_SOLVER
@@ -1808,6 +1873,7 @@ def run_method_coverage_sweep(seed: int, dgp: DGPDefinition, cfg: SweepConfig) -
 
 
 def summarize_coverage_curve(long_df: pd.DataFrame) -> pd.DataFrame:
+    """Aggregate seeded coverage-curve results by method and target."""
     if long_df.empty:
         raise ValueError("Cannot summarize an empty long-form result table.")
 
@@ -1832,14 +1898,17 @@ def summarize_coverage_curve(long_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def expected_rows_per_seed(cfg: SweepConfig) -> int:
+    """Return the number of method-target rows expected from each seed."""
     return len(CURVE_METHOD_ORDER) * len(cfg.coverage_sweep_targets)
 
 
 def build_seed_list(cfg: SweepConfig) -> list[int]:
+    """Create the deterministic replication seeds for a sweep."""
     return [cfg.seed + SEED_STEP * idx for idx in range(cfg.mc_reps)]
 
 
 def extract_completed_seeds(existing_long_df: pd.DataFrame, cfg: SweepConfig) -> set[int]:
+    """Identify seeds with a complete set of saved method-target rows."""
     if existing_long_df.empty:
         return set()
     key_counts = (
@@ -1853,6 +1922,7 @@ def extract_completed_seeds(existing_long_df: pd.DataFrame, cfg: SweepConfig) ->
 
 
 def study_signature(cfg: SweepConfig, dgp: DGPDefinition) -> dict[str, object]:
+    """Describe settings that must match when resuming a saved sweep."""
     return {
         "dgp_name": dgp.name,
         "dgp_title": dgp.title,
@@ -1884,6 +1954,7 @@ def build_config_payload(
     completed_seeds: Sequence[int],
     smoke_mode: bool,
 ) -> dict[str, object]:
+    """Build the JSON-serializable configuration saved with one DGP."""
     resolved_backend = effective_parallel_backend(cfg.parallel_backend, cfg.n_workers)
     return {
         "study_signature": study_signature(cfg, dgp),
@@ -1905,10 +1976,12 @@ def build_config_payload(
 
 
 def save_json(path: Path, payload: dict[str, object]) -> None:
+    """Write a configuration dictionary as readable JSON."""
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
 
 
 def load_saved_dgp_results(output_dir: Path | str = DEFAULT_RESULTS_DIR, dgp_names: Sequence[str] | None = None) -> dict[str, dict[str, object]]:
+    """Load stored summaries and configurations for requested DGPs."""
     output_dir = Path(output_dir)
     names = list(dgp_names) if dgp_names is not None else list(DGP_DISPLAY_ORDER)
     bundles: dict[str, dict[str, object]] = {}
@@ -1936,6 +2009,7 @@ def run_dgp_sweep(
     overwrite: bool = False,
     smoke_mode: bool = False,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Run, resume, and save the configured Monte Carlo sweep for one DGP."""
     dgp_dir = output_dir / dgp.name
     dgp_dir.mkdir(parents=True, exist_ok=True)
     long_path = dgp_dir / "long.csv"
@@ -2007,6 +2081,7 @@ def run_dgp_sweep(
 
 
 def apply_smoke_mode(cfg: SweepConfig, *, custom_coverages_provided: bool) -> SweepConfig:
+    """Reduce sample sizes for a fast end-to-end verification run."""
     return replace(
         cfg,
         n_train=min(cfg.n_train, 500),
@@ -2019,6 +2094,7 @@ def apply_smoke_mode(cfg: SweepConfig, *, custom_coverages_provided: bool) -> Sw
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    """Parse command-line options for the Task 2 sweep."""
     parser = argparse.ArgumentParser(
         description="Run the multiclass DGP coverage sweep and save one result bundle per DGP.",
     )
@@ -2076,6 +2152,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def resolve_requested_dgps(raw_dgps: Sequence[str] | None) -> list[DGPDefinition]:
+    """Resolve requested DGP names to registered definitions."""
     if not raw_dgps or "all" in raw_dgps:
         return [DGP_REGISTRY[name] for name in DGP_DISPLAY_ORDER]
     requested = []
@@ -2089,6 +2166,7 @@ def resolve_requested_dgps(raw_dgps: Sequence[str] | None) -> list[DGPDefinition
 
 
 def build_config_from_args(args: argparse.Namespace) -> SweepConfig:
+    """Translate parsed options into a sweep configuration."""
     coverage_targets = (
         tuple(float(value) for value in args.coverage_targets)
         if args.coverage_targets is not None and len(args.coverage_targets) > 0
@@ -2116,6 +2194,7 @@ def build_config_from_args(args: argparse.Namespace) -> SweepConfig:
 
 
 def main(argv: Sequence[str] | None = None) -> None:
+    """Run Task 2 from command-line options and report saved outputs."""
     args = parse_args(argv)
     cfg = build_config_from_args(args)
     requested_dgps = resolve_requested_dgps(args.dgp)

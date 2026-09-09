@@ -20,6 +20,7 @@ from picpi.paths import cached
 
 
 def main() -> None:
+    """Parse user options and launch the GPU width experiment."""
     parser = argparse.ArgumentParser(description="Compute Theorem 5.2 width results.")
     parser.add_argument("--output-dir", type=Path, default=cached("thm"))
     parser.add_argument("--gpu-ids", default="0")

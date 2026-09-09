@@ -16,6 +16,7 @@ from scripts.teaser_helper import compute_teaser, save_teaser
 
 
 def main() -> None:
+    """Generate and save the cached inputs for the teaser figure."""
     parser = argparse.ArgumentParser(description="Compute teaser figure inputs.")
     parser.add_argument("--output-dir", type=Path, default=cached("teaser"))
     args = parser.parse_args()

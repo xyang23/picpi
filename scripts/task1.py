@@ -22,6 +22,7 @@ from scripts.task1_helper import (
 
 
 def main() -> None:
+    """Parse options, run the Task 1 experiments, and save their results."""
     parser = argparse.ArgumentParser(description="Compute Task 1 paper results.")
     parser.add_argument("--output-dir", type=Path, default=cached("task1"))
     parser.add_argument("--n-mc", type=int, default=N_MC_TABLE)

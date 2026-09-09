@@ -69,6 +69,7 @@ class Task:
 
 
 def parse_gpu_ids(raw: str) -> list[int]:
+    """Parse a comma-separated CUDA device list."""
     ids = [int(part.strip()) for part in raw.split(",") if part.strip()]
     if not ids:
         raise argparse.ArgumentTypeError("--gpu-ids must contain at least one id")
@@ -78,6 +79,7 @@ def parse_gpu_ids(raw: str) -> list[int]:
 
 
 def format_n(n: int) -> str:
+    """Format a sample size compactly for display."""
     if n >= 1_000:
         exponent = int(math.floor(math.log10(n)))
         coefficient = n / (10**exponent)
@@ -91,6 +93,7 @@ def format_n(n: int) -> str:
 
 
 def make_x_grid(device: torch.device) -> torch.Tensor:
+    """Create the fixed feature grid used to evaluate interval widths."""
     return torch.linspace(-2.0, 2.0, NUM_ARM, device=device, dtype=torch.float64)
 
 
@@ -149,6 +152,7 @@ def sample_uniform_multinomial_counts(
 
 
 def train_torch_logistic(cfg: Config, device: torch.device) -> tuple[torch.Tensor, ...]:
+    """Fit the experiment's logistic model on one CUDA device."""
     torch.manual_seed(cfg.seed)
     torch.cuda.manual_seed_all(cfg.seed)
 
@@ -169,6 +173,7 @@ def train_torch_logistic(cfg: Config, device: torch.device) -> tuple[torch.Tenso
     )
 
     def closure() -> torch.Tensor:
+        """Evaluate the LBFGS objective and populate parameter gradients."""
         opt.zero_grad()
         logits = weight * x_train + bias
         loss = F.binary_cross_entropy_with_logits(logits, y_train)
@@ -207,6 +212,7 @@ def build_interval_tensors(
     p_true_grid: torch.Tensor,
     device: torch.device,
 ) -> tuple[torch.Tensor, ...]:
+    """Construct endpoint, width, and grid-membership tensors."""
     idx_i, idx_j = zip(*((i, j) for i in range(bins) for j in range(i + 1, bins + 1)))
     starts = torch.tensor(idx_i, device=device, dtype=torch.float64) / bins
     ends = torch.tensor(idx_j, device=device, dtype=torch.float64) / bins
@@ -241,6 +247,7 @@ def run_one_task(
     eval_contains: torch.Tensor,
     device: torch.device,
 ) -> dict[str, float | int]:
+    """Run one sample-size and replication pair on the selected device."""
     torch.manual_seed(task.seed)
     torch.cuda.manual_seed_all(task.seed)
 
@@ -293,6 +300,7 @@ def worker_run(
     label_prob_grid_cpu: torch.Tensor,
     eval_counts_cpu: torch.Tensor,
 ) -> list[dict[str, float | int]]:
+    """Process one task shard on a GPU and return its result records."""
     device = torch.device(f"cuda:{gpu_id}")
     torch.cuda.set_device(device)
 
@@ -323,6 +331,7 @@ def worker_run(
 
 
 def aggregate_results(df_results: pd.DataFrame) -> pd.DataFrame:
+    """Summarize width and coverage metrics by calibration-sample size."""
     return (
         df_results.groupby("n_calib")
         .agg(
@@ -341,12 +350,14 @@ def aggregate_results(df_results: pd.DataFrame) -> pd.DataFrame:
 
 
 def estimate_loglog_slope(summary: pd.DataFrame, width_col: str) -> float:
+    """Estimate a log-log width-decay slope from an aggregated summary."""
     x = np.log(summary["rate_term"].to_numpy())
     y = np.log(summary[width_col].to_numpy())
     return float(np.polyfit(x, y, deg=1)[0])
 
 
 def save_figures(df_results: pd.DataFrame, summary: pd.DataFrame, output_dir: Path) -> None:
+    """Save the width-distribution and width-versus-rate figures."""
     plt.style.use("seaborn-v0_8")
 
     fig, ax = plt.subplots(figsize=(6.5, 4.0))
@@ -414,6 +425,7 @@ def save_figures(df_results: pd.DataFrame, summary: pd.DataFrame, output_dir: Pa
 
 
 def shard_tasks(tasks: list[Task], num_shards: int) -> list[list[Task]]:
+    """Distribute tasks round-robin across GPU workers."""
     shards = [[] for _ in range(num_shards)]
     for idx, task in enumerate(tasks):
         shards[idx % num_shards].append(task)
@@ -421,6 +433,7 @@ def shard_tasks(tasks: list[Task], num_shards: int) -> list[list[Task]]:
 
 
 def validate_cuda(gpu_ids: list[int]) -> None:
+    """Check that CUDA and every requested device are available."""
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA is not available; this script is intended for GPU execution.")
     device_count = torch.cuda.device_count()
@@ -430,6 +443,7 @@ def validate_cuda(gpu_ids: list[int]) -> None:
 
 
 def build_tasks(n_grid: Iterable[int], reps: int, seed: int) -> list[Task]:
+    """Build reproducibly seeded jobs for each size and replication."""
     tasks = []
     for n_idx, n_calib in enumerate(n_grid):
         for rep in range(reps):
@@ -439,6 +453,7 @@ def build_tasks(n_grid: Iterable[int], reps: int, seed: int) -> list[Task]:
 
 
 def main() -> None:
+    """Run the GPU width experiment and save raw and summarized outputs."""
     parser = argparse.ArgumentParser(
         description="Reproduce the Theorem 5.2 notebook with GPU aggregate calibration.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,

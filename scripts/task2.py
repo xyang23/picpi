@@ -21,6 +21,7 @@ from picpi.paths import cached
 
 
 def main() -> None:
+    """Translate convenient Task 2 options into the full sweep command."""
     parser = argparse.ArgumentParser(description="Compute Task 2 DGP-sweep results.")
     parser.add_argument("--output-dir", type=Path, default=cached("task2"))
     parser.add_argument("--mc-reps", type=int, default=1000)

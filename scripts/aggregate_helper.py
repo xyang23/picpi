@@ -19,6 +19,7 @@ from scripts.task1_helper import TASK1_METHOD_ORDER, aggregate_multivariate_tabl
 
 
 def aggregate_thm(df_results: pd.DataFrame) -> pd.DataFrame:
+    """Summarize width-experiment replications by calibration-sample size."""
     return (
         df_results.groupby("n_calib")
         .agg(
@@ -37,6 +38,7 @@ def aggregate_thm(df_results: pd.DataFrame) -> pd.DataFrame:
 
 
 def aggregate_empirical_results(results: pd.DataFrame) -> pd.DataFrame:
+    """Summarize empirical-mode diagnostic metrics across replications."""
     return (
         results.groupby(["n_calib", "K", "method"], as_index=False)
         .agg(
@@ -53,6 +55,7 @@ def aggregate_empirical_results(results: pd.DataFrame) -> pd.DataFrame:
 
 
 def aggregate_empirical_widths(interval_results: pd.DataFrame) -> pd.DataFrame:
+    """Summarize interval pass rates and frequencies by interval width."""
     width_results = interval_results.copy()
     width_results["interval_length"] = (
         width_results["interval_length"].astype(float).round(12)
@@ -76,6 +79,7 @@ def aggregate_empirical_widths(interval_results: pd.DataFrame) -> pd.DataFrame:
 
 
 def aggregate_task2_long(long_df: pd.DataFrame) -> pd.DataFrame:
+    """Collapse Task 2 per-seed results into plotting summaries."""
     summary = (
         long_df.groupby(["method", "target_coverage"])
         .agg(
@@ -104,6 +108,7 @@ def _assert_frame_close(
     rtol: float = 1e-10,
     atol: float = 1e-10,
 ) -> None:
+    """Raise an informative error unless two result tables agree."""
     rebuilt = rebuilt.reset_index(drop=True)
     stored = stored.reset_index(drop=True)
     if list(rebuilt.columns) != list(stored.columns):
@@ -134,6 +139,7 @@ def _assert_frame_close(
 def load_and_verify_thm(
     results_dir: Path | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Load width results, rebuild their summary, and verify the stored copy."""
     results_dir = Path(results_dir) if results_dir is not None else CACHED_RESULTS / "thm"
     df_results = pd.read_csv(results_dir / "thm_df_results.csv")
     stored = pd.read_csv(results_dir / "thm_summary.csv")
@@ -145,6 +151,7 @@ def load_and_verify_thm(
 def load_and_verify_empirical(
     results_dir: Path | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Load empirical diagnostics and verify both stored summaries."""
     results_dir = (
         Path(results_dir)
         if results_dir is not None
@@ -162,6 +169,7 @@ def load_and_verify_empirical(
 
 
 def load_and_verify_task1(results_dir: Path | None = None) -> pd.DataFrame:
+    """Load Task 1 results and verify the Monte Carlo summary."""
     from scripts.task1_helper import load_task1
 
     payload = load_task1(results_dir)
@@ -173,6 +181,7 @@ def load_and_verify_task1(results_dir: Path | None = None) -> pd.DataFrame:
 def load_and_verify_task2(
     results_dir: Path | None = None,
 ) -> dict[str, dict[str, object]]:
+    """Load each Task 2 DGP and verify its complete-seed summary."""
     results_dir = Path(results_dir) if results_dir is not None else CACHED_RESULTS / "task2"
     bundles: dict[str, dict[str, object]] = {}
     for dgp_name in DGP_DISPLAY_ORDER:

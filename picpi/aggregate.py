@@ -18,7 +18,7 @@ from picpi.plot import DGP_DISPLAY_ORDER
 from picpi.task1 import TASK1_METHOD_ORDER, aggregate_multivariate_table
 
 
-def aggregate_thm52(df_results: pd.DataFrame) -> pd.DataFrame:
+def aggregate_thm(df_results: pd.DataFrame) -> pd.DataFrame:
     return (
         df_results.groupby("n_calib")
         .agg(
@@ -131,14 +131,14 @@ def _assert_frame_close(
                 raise AssertionError(f"{name}: value mismatch in {column}")
 
 
-def load_and_verify_thm52(
+def load_and_verify_thm(
     results_dir: Path | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    results_dir = Path(results_dir) if results_dir is not None else CACHED_RESULTS / "thm52"
-    df_results = pd.read_csv(results_dir / "thm52_df_results.csv")
-    stored = pd.read_csv(results_dir / "thm52_summary.csv")
-    rebuilt = aggregate_thm52(df_results)
-    _assert_frame_close(rebuilt, stored, name="thm52 summary")
+    results_dir = Path(results_dir) if results_dir is not None else CACHED_RESULTS / "thm"
+    df_results = pd.read_csv(results_dir / "thm_df_results.csv")
+    stored = pd.read_csv(results_dir / "thm_summary.csv")
+    rebuilt = aggregate_thm(df_results)
+    _assert_frame_close(rebuilt, stored, name="thm summary")
     return df_results, rebuilt
 
 

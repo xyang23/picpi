@@ -14,7 +14,7 @@ from picpi.aggregate import (
     load_and_verify_empirical,
     load_and_verify_task1,
     load_and_verify_task2,
-    load_and_verify_thm52,
+    load_and_verify_thm,
 )
 from picpi.paths import figures_dir
 from picpi.plot import (
@@ -23,7 +23,7 @@ from picpi.plot import (
     plot_task1_visualization,
     plot_task2,
     plot_teaser,
-    plot_thm52,
+    plot_thm,
     write_task1_table,
 )
 from picpi.teaser import load_teaser
@@ -34,9 +34,9 @@ def main() -> None:
     teaser = load_teaser()
     print("teaser", plot_teaser(teaser, out))
 
-    thm52_df, thm52_summary = load_and_verify_thm52()
-    print("verified thm52 intermediates -> summary")
-    print("thm52", plot_thm52(thm52_df, thm52_summary, out))
+    thm_df, thm_summary = load_and_verify_thm()
+    print("verified thm intermediates -> summary")
+    print("thm", plot_thm(thm_df, thm_summary, out))
 
     emp_summary, emp_width = load_and_verify_empirical()
     print("verified empirical-mode intermediates -> summaries")

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Rerun the Theorem 5.2 / width-shrinkage GPU experiment.
 
-Requires CUDA. Cached paper CSVs already live in cached_results/thm52/.
+Requires CUDA. Cached paper CSVs already live in cached_results/thm/.
 A tiny CPU-incompatible smoke still goes through the GPU script.
 """
 
@@ -21,7 +21,7 @@ from picpi.paths import VENDOR, cached
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Compute Theorem 5.2 width results.")
-    parser.add_argument("--output-dir", type=Path, default=cached("thm52"))
+    parser.add_argument("--output-dir", type=Path, default=cached("thm"))
     parser.add_argument("--gpu-ids", default="0")
     parser.add_argument("--reps", type=int, default=100)
     parser.add_argument(
@@ -37,7 +37,7 @@ def main() -> None:
     reps = 2 if args.smoke else args.reps
     cmd = [
         sys.executable,
-        str(VENDOR / "reproduce_thm52_gpu.py"),
+        str(VENDOR / "reproduce_thm_gpu.py"),
         "--gpu-ids",
         args.gpu_ids,
         "--output-dir",

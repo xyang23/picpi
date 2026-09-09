@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""GPU reproduction of experiments/veri_Thm5.2/thm52_demo.ipynb.
+"""GPU reproduction of experiments/veri_Thm5.2/thm_demo.ipynb.
 
 The notebook samples calibration rows directly and then scans them once for
 every candidate interval. This script keeps the same Task 1 discrete X grid and
@@ -353,8 +353,8 @@ def save_figures(df_results: pd.DataFrame, summary: pd.DataFrame, output_dir: Pa
     ax.set_title(r"Width vs. $(\log n / n)^{1/3}$")
     ax.grid(True, which="both", alpha=0.3)
     ax.legend()
-    fig.savefig(output_dir / "thm52_width_vs_rate.pdf", bbox_inches="tight")
-    fig.savefig(output_dir / "thm52_width_vs_rate.png", dpi=200, bbox_inches="tight")
+    fig.savefig(output_dir / "thm_width_vs_rate.pdf", bbox_inches="tight")
+    fig.savefig(output_dir / "thm_width_vs_rate.png", dpi=200, bbox_inches="tight")
     plt.close(fig)
 
     fig, ax = plt.subplots(figsize=(7.5, 4.5))
@@ -404,8 +404,8 @@ def save_figures(df_results: pd.DataFrame, summary: pd.DataFrame, output_dir: Pa
     ax.legend(handles=legend_elements, loc="upper right")
 
     plt.tight_layout()
-    fig.savefig(output_dir / "thm52_width_mean_boxplot.pdf", bbox_inches="tight")
-    fig.savefig(output_dir / "thm52_width_mean_boxplot.png", dpi=200, bbox_inches="tight")
+    fig.savefig(output_dir / "thm_width_mean_boxplot.pdf", bbox_inches="tight")
+    fig.savefig(output_dir / "thm_width_mean_boxplot.png", dpi=200, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -529,8 +529,8 @@ def main() -> None:
     df_results = pd.DataFrame(records).sort_values(["n_calib", "rep"]).reset_index(drop=True)
     summary = aggregate_results(df_results)
 
-    df_results.to_csv(args.output_dir / "thm52_df_results.csv", index=False)
-    summary.to_csv(args.output_dir / "thm52_summary.csv", index=False)
+    df_results.to_csv(args.output_dir / "thm_df_results.csv", index=False)
+    summary.to_csv(args.output_dir / "thm_summary.csv", index=False)
     save_figures(df_results, summary, args.output_dir)
 
     if len(summary) >= 2:

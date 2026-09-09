@@ -119,7 +119,7 @@ def parse_gpu_ids(raw: str) -> list[int]:
 
 
 def adaptive_num_bin(n_calib: int, c_value: float) -> int:
-    """Return K(n, C) using the schedule from reproduce_thm52_gpu_adaptive.py."""
+    """Return K(n, C) using the schedule from reproduce_thm_gpu_adaptive.py."""
     return max(1, int(round(c_value * (n_calib ** (1.0 / 3.0)))))
 
 

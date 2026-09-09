@@ -184,12 +184,12 @@ def format_n(n: int) -> str:
     return str(n)
 
 
-def plot_thm52(
+def plot_thm(
     df_results: pd.DataFrame,
     summary: pd.DataFrame,
     output_dir: Path | None = None,
 ) -> tuple[Path, Path]:
-    """Paper ``fig:thm52_box_rate``: boxplot and width-vs-rate panels."""
+    """Paper ``fig:thm_box_rate``: boxplot and width-vs-rate panels."""
     output_dir = Path(output_dir) if output_dir is not None else figures_dir()
     plt.style.use("seaborn-v0_8")
 
@@ -203,7 +203,7 @@ def plot_thm52(
     ax.set_title(r"Width vs. $(\log n / n)^{1/3}$")
     ax.grid(True, which="both", alpha=0.3)
     ax.legend()
-    rate_path = _save(fig, output_dir / "thm52_width_vs_rate.pdf")
+    rate_path = _save(fig, output_dir / "thm_width_vs_rate.pdf")
 
     fig, ax = plt.subplots(figsize=(7.5, 4.5))
     n_calib_list = sorted(df_results["n_calib"].unique())
@@ -252,7 +252,7 @@ def plot_thm52(
         loc="upper right",
     )
     fig.tight_layout()
-    box_path = _save(fig, output_dir / "thm52_width_mean_boxplot.pdf")
+    box_path = _save(fig, output_dir / "thm_width_mean_boxplot.pdf")
     return box_path, rate_path
 
 

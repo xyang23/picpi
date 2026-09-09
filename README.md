@@ -52,8 +52,8 @@ Outputs:
 
 ```text
 figures/picpi_teaser_green.pdf
-figures/thm52_width_mean_boxplot.pdf
-figures/thm52_width_vs_rate.pdf
+figures/thm_width_mean_boxplot.pdf
+figures/thm_width_vs_rate.pdf
 figures/heldout_picpi_failure_rate_by_method.pdf
 figures/heldout_picpi_pass_rate_by_interval_length.pdf
 figures/task1_interval_visualization.pdf
@@ -89,14 +89,14 @@ After recomputing, redraw the figures:
 uv run python compute/plot_all.py
 ```
 
-Do **not** rerun the GPU scripts to reproduce the paper. Width-shrinkage and empirical-mode diagnostics already have their per-replication CSVs in `cached_results/thm52/` and `cached_results/empirical_mode/`. Task 2 was a CPU sweep; its per-seed `long.csv` files are already in `cached_results/task2/`.
+Do **not** rerun the GPU scripts to reproduce the paper. Width-shrinkage and empirical-mode diagnostics already have their per-replication CSVs in `cached_results/thm/` and `cached_results/empirical_mode/`. Task 2 was a CPU sweep; its per-seed `long.csv` files are already in `cached_results/task2/`.
 
 ## Figure and table mapping
 
 | Paper object | Paper file | This folder, compute | This folder, plot | Stored result |
 |---|---|---|---|---|
 | Teaser (`fig:teaser`) | `Figures/picpi_teaser_green.pdf` | `compute/teaser.py` | `picpi/plot.py::plot_teaser` | `cached_results/teaser/` |
-| Width shrinkage (`fig:thm52_box_rate`) | `Figures/thm52_width_mean_boxplot.pdf`, `Figures/thm52_width_vs_rate.pdf` | cached GPU CSV, no rerun | `picpi/plot.py::plot_thm52` | `cached_results/thm52/thm52_df_results.csv` |
+| Width shrinkage (`fig:thm_box_rate`) | `Figures/thm_width_mean_boxplot.pdf`, `Figures/thm_width_vs_rate.pdf` | cached GPU CSV, no rerun | `picpi/plot.py::plot_thm` | `cached_results/thm/thm_df_results.csv` |
 | Empirical-mode diagnostics (`fig:emp_mode_diagnostics`) | `Figures/heldout_picpi_failure_rate_by_method.pdf`, `Figures/heldout_picpi_pass_rate_by_interval_length.pdf` | cached GPU CSV, no rerun | `picpi/plot.py::plot_empirical_mode` | `cached_results/empirical_mode/heldout_picpi_*.csv` |
 | Task 1 univariate (`fig:task1_interval_visualization`) | `artifacts/task1_interval_visualization.pdf` | `compute/task1.py` | `picpi/plot.py::plot_task1_visualization` | `cached_results/task1/univariate_visualization.npz` |
 | Task 1 misspecified tree (`fig:task1_misspecified_tree`) | `artifacts/task1_misspecified_point_estimator_decision_tree.pdf` | `compute/task1.py` | `picpi/plot.py::plot_task1_tree` | `cached_results/task1/misspecified_tree.npz` |

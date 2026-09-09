@@ -477,7 +477,7 @@ def compute_misspecified_tree():
         "p_star": p_true_tree(x_grid),
         "p_hat": predict_binary_proba(model, x_grid),
         "intervals": assign_partition_interval(
-            predict_binary_proba(model, x_grid), partition, expand=0.0
+            predict_binary_proba(model, x_grid), partition, expand=PICPI_EPSILON
         ),
     }
 

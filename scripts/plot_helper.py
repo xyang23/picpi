@@ -447,19 +447,20 @@ def plot_task1_visualization(
             linewidth=1.2,
             label=r"predicted probability $\hat p(x)$",
         )
-        ax.set_title(method, fontsize=18)
-        ax.set_xlabel("x")
+        ax.set_title(method, fontsize=20)
+        ax.set_xlabel("x", fontsize=16)
+        ax.tick_params(axis="both", labelsize=14)
         ax.text(
             0.97,
             0.04,
             rf"avg length = {metrics['Average length']:.3f}, coverage of true prob = {metrics['Coverage p*']:.1%}",
             transform=ax.transAxes,
-            fontsize=12,
+            fontsize=14,
             ha="right",
             bbox=dict(boxstyle="round", facecolor="white", alpha=0.85),
         )
         ax.grid(alpha=0.25)
-        ax.legend(loc="upper left", fontsize=12)
+        ax.legend(loc="upper left", fontsize=14)
     axes[-1].axis("off")
     fig.tight_layout()
     return _save(fig, output_dir / "task1_interval_visualization.pdf")
@@ -505,9 +506,10 @@ def plot_task1_tree(tree: dict[str, object], output_dir: Path | None = None) -> 
         alpha=0.18,
         label="PICPI interval",
     )
-    ax.set_xlabel("x")
-    ax.set_title("Misspecified point estimator: decision tree", fontsize=15)
-    ax.legend(loc="best")
+    ax.set_xlabel("x", fontsize=16)
+    ax.tick_params(axis="both", labelsize=14)
+    ax.set_title("Misspecified point estimator: decision tree", fontsize=18)
+    ax.legend(loc="best", fontsize=13)
     ax.grid(alpha=0.25)
     fig.tight_layout()
     return _save(fig, output_dir / "task1_misspecified_point_estimator_decision_tree.pdf")

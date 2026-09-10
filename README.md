@@ -17,7 +17,6 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 Then, from this folder:
 
 ```bash
-cd picpi_reproducibility
 uv sync
 ```
 
@@ -40,7 +39,6 @@ The example DGP and plotting details are isolated in `scripts/example_use_helper
 Default path: load the stored intermediates, rebuild the summaries, check they match the cached summaries, and write the paper filenames into `figures/`.
 
 ```bash
-cd picpi_reproducibility
 uv sync
 uv run python scripts/plot_all.py
 ```

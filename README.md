@@ -73,7 +73,7 @@ Results are written to `cached_results/teaser/` by default.
 
 ### Task 1: probability intervals (CPU)
 
-Computes the univariate method comparison, the misspecified decision-tree example, and the 100-replication multivariate Monte Carlo table.
+Computes the univariate method comparison, the misspecified decision-tree example, and the 100-replication multivariate Monte Carlo table. Task 1 reports two ECE definitions on the same replications: midpoint ECE (the paper table) and mean-score ECE, which replaces each interval midpoint by the mean fitted probability in that interval.
 
 ```bash
 uv run python scripts/task1.py
@@ -147,6 +147,7 @@ uv run python scripts/plot_all.py
 | Task 1 univariate (`fig:task1_interval_visualization`) | `artifacts/task1_interval_visualization.pdf` | `scripts/task1.py` | `scripts/plot_helper.py::plot_task1_visualization` | `cached_results/task1/univariate_visualization.npz` |
 | Task 1 misspecified tree (`fig:task1_misspecified_tree`) | `artifacts/task1_misspecified_point_estimator_decision_tree.pdf` | `scripts/task1.py` | `scripts/plot_helper.py::plot_task1_tree` | `cached_results/task1/misspecified_tree.npz` |
 | Task 1 table (`tab:task1_multivariate_mc_summary`) | `artifacts/task1_multivariate_mc_summary.tex` | `scripts/task1.py` | `scripts/plot_helper.py::write_task1_table` | `cached_results/task1/multivariate_mc_reps.csv` |
+| Task 1 ECE comparison | `artifacts/task1_ece_metric_compare.tex` | `scripts/task1.py` | `scripts/plot_helper.py::write_task1_ece_compare_table` | `cached_results/task1/multivariate_mc_reps.csv` |
 | Task 2 (`fig:task2`) | `Figures/task2_multiclass_dgp_sweep.pdf` | `scripts/task2.py` (CPU, optional) | `scripts/plot_helper.py::plot_task2` | `cached_results/task2/*/long.csv` |
 
 PICPI interval construction is `picpi/calibration.py`.

@@ -330,32 +330,54 @@ def method_fixed_width_binning(model, x_eval, num_bins=NUM_BINS):
     return intervals
 
 
-def compute_interval_metrics(intervals, p_star):
-    """Evaluate interval width, calibration error, and coverage metrics."""
+def compute_interval_metrics(intervals, p_star, p_hat=None):
+    """Evaluate interval width, calibration error, and coverage metrics.
+
+    Two ECE definitions are available. Both average unweighted over the
+    distinct reported intervals ``I_j = [ell_j, u_j]`` with index sets
+    ``A_j = {i : C(X_i) = I_j}``.
+
+    Midpoint ECE (paper / ``ece``):
+        (1/M) sum_j |mean_{i in A_j} p*(X_i) - midpoint(I_j)|
+
+    Mean-score ECE (``ece_mean_phat``; requires ``p_hat``):
+        (1/M) sum_j |mean_{i in A_j} p*(X_i) - mean_{i in A_j} p-hat(X_i)|
+    """
     intervals = np.asarray(intervals, dtype=float)
     p_star = np.asarray(p_star, dtype=float)
+    p_hat = None if p_hat is None else np.asarray(p_hat, dtype=float)
     lower = intervals[:, 0]
     upper = intervals[:, 1]
     lengths = upper - lower
     covered = (p_star >= lower) & (p_star <= upper)
     rounded = np.round(intervals, 12)
     unique_intervals = np.unique(rounded, axis=0)
-    ece_terms = []
+    ece_midpoint_terms = []
+    ece_mean_phat_terms = []
     for left, right in unique_intervals:
         mask = np.isclose(lower, left) & np.isclose(upper, right)
-        if mask.any():
-            midpoint = 0.5 * (left + right)
-            ece_terms.append(abs(float(np.mean(p_star[mask])) - midpoint))
+        if not mask.any():
+            continue
+        mean_pstar = float(np.mean(p_star[mask]))
+        midpoint = 0.5 * (float(left) + float(right))
+        ece_midpoint_terms.append(abs(mean_pstar - midpoint))
+        if p_hat is not None:
+            ece_mean_phat_terms.append(abs(mean_pstar - float(np.mean(p_hat[mask]))))
     grid = np.linspace(0.0, 1.0, 10001)
     covered_grid = np.zeros_like(grid, dtype=bool)
     for left, right in unique_intervals:
         covered_grid |= (grid >= left) & (grid <= right)
-    return {
+    metrics = {
         "avg_length": float(np.mean(lengths)),
-        "ece": float(np.mean(ece_terms)) if ece_terms else 0.0,
+        "ece": float(np.mean(ece_midpoint_terms)) if ece_midpoint_terms else 0.0,
         "coverage_01_union": float(np.mean(covered_grid)),
         "coverage_pstar": float(np.mean(covered)),
     }
+    if p_hat is not None:
+        metrics["ece_mean_phat"] = (
+            float(np.mean(ece_mean_phat_terms)) if ece_mean_phat_terms else 0.0
+        )
+    return metrics
 
 
 def build_task1_results(
@@ -406,11 +428,15 @@ def build_task1_results(
     return intervals_by_method, metadata
 
 
-def summarise_task1_results(intervals_by_method, p_star_eval, selected_bins):
+def summarise_task1_results(
+    intervals_by_method, p_star_eval, selected_bins, p_hat_eval=None
+):
     """Create one comparison row per Task 1 interval method."""
     rows = []
     for method in TASK1_METHOD_ORDER:
-        metrics = compute_interval_metrics(intervals_by_method[method], p_star_eval)
+        metrics = compute_interval_metrics(
+            intervals_by_method[method], p_star_eval, p_hat=p_hat_eval
+        )
         if method == "Simultaneous confidence interval":
             coverage_01 = np.nan
         elif method == "PICPI":
@@ -421,15 +447,16 @@ def summarise_task1_results(intervals_by_method, p_star_eval, selected_bins):
             coverage_01 = float(np.mean(selected_bins))
         else:
             coverage_01 = 1.0
-        rows.append(
-            {
-                "Method": method,
-                "Average length": metrics["avg_length"],
-                "ECE": metrics["ece"],
-                "Coverage [0,1]": coverage_01,
-                "Coverage p*": metrics["coverage_pstar"],
-            }
-        )
+        row = {
+            "Method": method,
+            "Average length": metrics["avg_length"],
+            "ECE": metrics["ece"],
+        }
+        if "ece_mean_phat" in metrics:
+            row["ECE mean p-hat"] = metrics["ece_mean_phat"]
+        row["Coverage [0,1]"] = coverage_01
+        row["Coverage p*"] = metrics["coverage_pstar"]
+        rows.append(row)
     return pd.DataFrame(rows)
 
 
@@ -443,11 +470,15 @@ def compute_univariate_visualization():
     )
     model = fit_shared_binary_model(x_train, y_train)
     p_star_eval = p_true_univariate(x_eval)
+    p_hat_eval = predict_binary_proba(model, x_eval)
     intervals_by_method, metadata = build_task1_results(
         model, x_train, x_cal, y_cal, x_eval
     )
     summary = summarise_task1_results(
-        intervals_by_method, p_star_eval, metadata["selected_bins"]
+        intervals_by_method,
+        p_star_eval,
+        metadata["selected_bins"],
+        p_hat_eval=p_hat_eval,
     )
     sort_idx = np.argsort(x_eval)
     return {
@@ -492,11 +523,15 @@ def run_multivariate_rep(seed):
     )
     model = fit_shared_binary_model(x_train, y_train)
     p_star_eval = p_true_multivariate(x_eval)
+    p_hat_eval = predict_binary_proba(model, x_eval)
     intervals_by_method, metadata = build_task1_results(
         model, x_train, x_cal, y_cal, x_eval, picpi_mode="empirical", picpi_delta=None
     )
     return summarise_task1_results(
-        intervals_by_method, p_star_eval, metadata["selected_bins"]
+        intervals_by_method,
+        p_star_eval,
+        metadata["selected_bins"],
+        p_hat_eval=p_hat_eval,
     )
 
 
@@ -527,6 +562,28 @@ def aggregate_multivariate_table(mc_results: pd.DataFrame) -> pd.DataFrame:
         .reindex(TASK1_METHOD_ORDER)
         .reset_index()
     )
+
+
+def aggregate_ece_compare_table(mc_results: pd.DataFrame) -> pd.DataFrame:
+    """Summarize midpoint ECE and mean-score ECE on the same replications."""
+    if "ECE mean p-hat" not in mc_results.columns:
+        raise ValueError("Monte Carlo results do not include ECE mean p-hat")
+    summary = (
+        mc_results.groupby("Method", sort=False)
+        .agg(
+            ece_midpoint_mean=("ECE", "mean"),
+            ece_midpoint_sd=("ECE", "std"),
+            ece_mean_phat_mean=("ECE mean p-hat", "mean"),
+            ece_mean_phat_sd=("ECE mean p-hat", "std"),
+        )
+        .reindex(TASK1_METHOD_ORDER)
+        .reset_index()
+    )
+    min_mid = float(summary["ece_midpoint_mean"].min())
+    min_phat = float(summary["ece_mean_phat_mean"].min())
+    summary["relative_ece_midpoint"] = summary["ece_midpoint_mean"] / min_mid
+    summary["relative_ece_mean_phat"] = summary["ece_mean_phat_mean"] / min_phat
+    return summary
 
 
 def save_task1(
@@ -562,6 +619,10 @@ def save_task1(
     aggregate_multivariate_table(mc_results).to_csv(
         output_dir / "multivariate_mc_summary.csv", index=False
     )
+    if "ECE mean p-hat" in mc_results.columns:
+        aggregate_ece_compare_table(mc_results).to_csv(
+            output_dir / "multivariate_ece_compare_summary.csv", index=False
+        )
     method_names = np.array(TASK1_METHOD_ORDER, dtype=object)
     np.save(output_dir / "method_order.npy", method_names, allow_pickle=True)
     return output_dir
@@ -591,4 +652,9 @@ def load_task1(output_dir: Path | None = None) -> dict[str, object]:
         },
         "mc_results": pd.read_csv(output_dir / "multivariate_mc_reps.csv"),
         "mc_summary": pd.read_csv(output_dir / "multivariate_mc_summary.csv"),
+        "ece_compare_summary": (
+            pd.read_csv(output_dir / "multivariate_ece_compare_summary.csv")
+            if (output_dir / "multivariate_ece_compare_summary.csv").exists()
+            else None
+        ),
     }

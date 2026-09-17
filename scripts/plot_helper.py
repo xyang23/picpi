@@ -578,6 +578,50 @@ def write_task1_table(
     return path
 
 
+def write_task1_ece_compare_table(
+    compare_summary: pd.DataFrame, output_dir: Path | None = None
+) -> Path:
+    """Write midpoint ECE versus mean-score ECE on the same Monte Carlo draws."""
+    output_dir = Path(output_dir) if output_dir is not None else figures_dir()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    rows = []
+    for _, row in compare_summary.iterrows():
+        rows.append(
+            {
+                "Method": row["Method"],
+                "Rel. ECE (midpoint)": f"{row['relative_ece_midpoint']:.2f}",
+                "Rel. ECE (mean p-hat)": f"{row['relative_ece_mean_phat']:.2f}",
+                "ECE (midpoint)": (
+                    f"{row['ece_midpoint_mean']:.4f} $\\pm$ "
+                    f"{row['ece_midpoint_sd']:.4f}"
+                ),
+                "ECE (mean p-hat)": (
+                    f"{row['ece_mean_phat_mean']:.4f} $\\pm$ "
+                    f"{row['ece_mean_phat_sd']:.4f}"
+                ),
+            }
+        )
+    display = pd.DataFrame(rows)
+    lines = [
+        "\\begin{tabular}{lcccc}",
+        "\\toprule",
+        "Method & Rel.\\ ECE (midpoint) & Rel.\\ ECE (mean $\\hat p$) & "
+        "ECE (midpoint) & ECE (mean $\\hat p$) \\\\",
+        "\\midrule",
+    ]
+    for _, row in display.iterrows():
+        lines.append(
+            f"{row['Method']} & {row['Rel. ECE (midpoint)']} & "
+            f"{row['Rel. ECE (mean p-hat)']} & {row['ECE (midpoint)']} & "
+            f"{row['ECE (mean p-hat)']} \\\\"
+        )
+    lines.extend(["\\bottomrule", "\\end{tabular}"])
+    path = output_dir / "task1_ece_metric_compare.tex"
+    path.write_text("\n".join(lines) + "\n")
+    display.to_csv(output_dir / "task1_ece_metric_compare.csv", index=False)
+    return path
+
+
 def load_task2_bundles(results_dir: Path) -> dict[str, dict[str, object]]:
     """Load Task 2 summaries and configuration files for each DGP."""
     bundles = {}

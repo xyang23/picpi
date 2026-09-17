@@ -15,7 +15,11 @@ import pandas as pd
 
 from scripts.paths import CACHED_RESULTS
 from scripts.plot_helper import DGP_DISPLAY_ORDER
-from scripts.task1_helper import TASK1_METHOD_ORDER, aggregate_multivariate_table
+from scripts.task1_helper import (
+    TASK1_METHOD_ORDER,
+    aggregate_ece_compare_table,
+    aggregate_multivariate_table,
+)
 
 
 def aggregate_thm(df_results: pd.DataFrame) -> pd.DataFrame:
@@ -175,6 +179,15 @@ def load_and_verify_task1(results_dir: Path | None = None) -> pd.DataFrame:
     payload = load_task1(results_dir)
     rebuilt = aggregate_multivariate_table(payload["mc_results"])
     _assert_frame_close(rebuilt, payload["mc_summary"], name="task1 MC summary")
+    if "ECE mean p-hat" in payload["mc_results"].columns:
+        rebuilt_compare = aggregate_ece_compare_table(payload["mc_results"])
+        stored_compare = payload["ece_compare_summary"]
+        if stored_compare is None:
+            raise AssertionError("task1 ECE compare summary is missing")
+        _assert_frame_close(
+            rebuilt_compare, stored_compare, name="task1 ECE compare summary"
+        )
+        payload["ece_compare_summary"] = rebuilt_compare
     return payload
 
 

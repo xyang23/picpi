@@ -24,6 +24,7 @@ from scripts.plot_helper import (
     plot_task2,
     plot_teaser,
     plot_thm,
+    write_task1_ece_compare_table,
     write_task1_table,
 )
 from scripts.teaser_helper import load_teaser
@@ -48,6 +49,11 @@ def main() -> None:
     print("task1 vis", plot_task1_visualization(task1["univariate"], out))
     print("task1 tree", plot_task1_tree(task1["tree"], out))
     print("task1 table", write_task1_table(task1["mc_summary"], out))
+    if task1.get("ece_compare_summary") is not None:
+        print(
+            "task1 ece compare",
+            write_task1_ece_compare_table(task1["ece_compare_summary"], out),
+        )
 
     task2 = load_and_verify_task2()
     print("verified Task 2 long.csv intermediates -> summaries")
